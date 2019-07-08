@@ -1,0 +1,21 @@
+{
+  "name": "importServer",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "co-mysql": "^1.0.0",
+    "koa": "^2.7.0",
+    "koa-better-body": "^3.0.4",
+    "koa-router": "^7.4.0",
+    "koa-session": "^5.12.0",
+    "koa-static": "^5.0.0",
+    "mysql": "^2.17.1"
+  }
+}

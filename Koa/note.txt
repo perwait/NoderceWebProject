@@ -1,0 +1,26 @@
+服务器文件目录说明
+ 
+ 根 ROOT
+ |- node_modules/ 由npm配置生成
+ |- libs/ 存储公共对象 配置
+    |- md5.js 计算MD5值 的公共函数 
+    |- database.js 连接数据库的 公共函数
+ |- log/ 记录日志
+ |- router/ 存储路由表信息
+    |- admin/ 后台管理的路由目录
+       |- index.js 路由节点主入口
+    |- client/ 客户端的路由目录
+       |- index.js 路由节点主入口
+    |- staticCache.js 静态资源的访问和缓存时间的 配置路由
+ |- static/ 存储静态文件
+    |- css/* 存储所有css央视文件
+    |- js/* 存储所有javascript脚本文件
+    |- img/* 存储所有image图片文件
+ |- template/ 模板文件
+ |- upload/ 客户端上传文件的 目录
+ |- server.js 程序入口
+ |- config.js 全局配置信息
+ |- package.json 服务器程序依赖配置信息
+ |- package-lock.json 记录package,json 依赖项的具体来源和版本号
+ |- note.txt 服务器目录结构说明
+ |- getKeys.js 独立运行，生成2048个1024字节的随机字符串 .keys文件，用作server.keys的滚动签名
