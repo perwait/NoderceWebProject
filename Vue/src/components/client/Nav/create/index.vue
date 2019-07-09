@@ -12,7 +12,7 @@
                     <hr>
                     <p class="msg"> {{msg}}</p>
                     <hr>
-                    <TinyMCE v-on:input="TinyBody" />
+                    <TinyMCE v-on:input="TinyBody" :url="tinyUrl" :withCredentials="withCredentials" :max-size="tinyImgSize" @on-upload-complete= "onEditorUploadComplete"  @on-upload-fail   = "onEditorUploadFail"/>
                     <hr>
                     <ul id="ReferList" class="referList">
                         <span>参考列表：数量{{referList}}/{{referListMax}}</span><button @click="referDel()"> -1 </button><button @click="referAdd()"> +1 </button>
@@ -51,7 +51,10 @@ export default {
             tinyMaxSize :10000, //最大字数
             titleName : null, //标题名称 或者 主题名称
             createState : true, // 目前状态 是否允许创建 防止重复创建事件
-            createMsg : null //创建事件错误信息
+            createMsg : null, //创建事件错误信息
+            tinyUrl :  `${window.myConfig.IMPORT_HTTP}/uploadImg`,
+            tinyImgSize : 2000*1024, //限制大小2M
+            withCredentials : true //是否允许设置cookie
         }
     },
     computed:{
@@ -60,6 +63,12 @@ export default {
         //返回编辑器的内容
         TinyBody : function(data){
             this.tinyBody = data;
+        },
+        onEditorUploadComplete : function(arr){
+            console.log("arr",arr)
+        }, 
+        onEditorUploadFail: function(err){
+            
         },
         //限制最大长度
         Max : function(event,maxSize,tag){

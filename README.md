@@ -3,7 +3,7 @@
 
 # [Noderce.com V1.0.0](http://noderce.com)
     目前仅支持 1200px以上分辨率 的屏幕 正常体验，
-    目前仅支持 文字阅览
+
 ## Start
     MySQL ： UTF-8
     All : npm i
@@ -15,7 +15,7 @@
     Node.js
     Koa
     MySQL
-# 进度90%
+# 进度100%
     Status : 基本的发布与回复
     
     

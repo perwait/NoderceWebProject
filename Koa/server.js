@@ -19,7 +19,8 @@ server.context.config = config; //注册全局 全局配置信息
 
 //注册组件  自定义上传目录
 server.use(Koa_better_body({
-    uploadDir : config.UPLOAD_URL
+    uploadDir : config.UPLOAD_URL,
+    keepExtensions : true
 }));
 
 //注册组件  session 滚动签名

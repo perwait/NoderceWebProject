@@ -39,10 +39,31 @@ export default {
             branding: false, // 是否显示 品牌名
             elementpath: false, //隐藏底部 层级标签状态栏
             statusbar: false, //隐藏底部状态栏
-            
+            toolbar:`alignleft aligncenter alignright alignjustify | fontsizeselect  hr image link table | removeformat code`,
+            plugins:`hr image link code table  `,
+            fontsize_formats: '14px 16px 18px 20px 24px',
+            imagetools_toolbar: 'rotateleft rotateright | flipv fliph | editimage imageoptions'
+         
           }
         }
-      }
+      },
+      //图片上传需要的
+      url: {
+          default: '',
+          type: String
+        },
+        accept: {
+          default: 'image/jpeg, image/png',
+          type: String
+        },
+        maxSize: {
+          default: 2097152,
+          type: Number
+        },
+        withCredentials: {
+          default: false,
+          type: Boolean
+        }
     },
     mounted () {
       this.init()
@@ -62,7 +83,70 @@ export default {
           
           // prop内传入的的config
           ...this.config, 
-          
+
+           // 图片上传
+          images_upload_handler: function (blobInfo, success, failure) {
+            if (blobInfo.blob().size > self.maxSize) {
+              failure('文件体积过大')
+            }
+            
+            if (self.accept.indexOf(blobInfo.blob().type) >= 0) {
+              uploadPic()
+            } else {
+              failure('图片格式错误')
+            }
+            function uploadPic () {
+              //const xhr = new XMLHttpRequest()
+              let formData = new FormData()
+              formData.append('file', blobInfo.blob());
+
+              ( async ()=>{
+                fetch(self.url,{
+                  method:"POST",
+                  body: formData
+                }).then(function(response){
+                  if(response.status===200){
+                    console.log(11011)
+
+                    return response.json()
+                  }else {
+                    console.log(response.status)
+                    return response.json()
+                  }
+                  console.log(response.status)
+                }).then(function(data){
+                  if(data.url){
+                    success(data.url)
+                  }
+                  if(data.err){
+                    failure(data.err)
+                  }
+                  return;
+                })
+              })()
+             /* xhr.withCredentials = self.withCredentials
+              xhr.open('POST', self.url)
+              
+              xhr.onload = function () {
+
+                if (xhr.status !== 200) {
+                  // 抛出 'on-upload-fail' 钩子
+                  self.$emit('on-upload-fail')
+                  failure('上传失败: ' + xhr.status)
+                  console.log("err 123123")
+                  return
+                }
+
+                const json = JSON.parse(xhr.responseText)
+                // 抛出 'on-upload-complete' 钩子
+                self.$emit('on-upload-complete' , [
+                  json, success, failure
+                ])
+              }
+              xhr.send(formData)*/
+            }
+          },
+
           // 挂载的DOM对象
           selector: `#${this.Id}`,
           

@@ -42,6 +42,15 @@ router.all('*', async (ctx,next) =>{
 
 });
 
+//上传图片
+router.post("uploadImg", async (ctx,next)=>{
+    ctx.status=200;
+    let _path= ctx.request.fields.file[0].path;
+    let url=ctx.config.HTTP_URL+"/"+_path.substring(_path.search('upload_'));
+    console.log(url);
+    ctx.body={url:url}; 
+});
+
 //获取 Nav上推荐的主题类目
 router.get("topThemeList", async (ctx,next)=>{
     ctx.status = 200;
