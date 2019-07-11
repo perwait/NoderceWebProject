@@ -1,12 +1,6 @@
 const crypto = require("crypto");
-qiniuConfig = {
-    scope : "You_name", //空间名称
-    time : 3600*1000, //有效时间 毫秒
-    accessKey : "You_Ak", //七牛云 AK 
-    secretKey : "You_Sk" //七牛云 SK
 
-}
-function getUploadKey(config){
+module.exports= function (config){
     //定义策略
     putPolicy = {
         scope: config.scope,
@@ -41,7 +35,6 @@ function getUploadKey(config){
     encodedSign = getSafetyBase64(encodedSign);
     //拼接最后的上传字符串
     let uploadToken = config.accessKey + ':' + encodedSign + ':' + encodedPutPolicy;
-    console.log(uploadToken)
+    return uploadToken;
 }
-getUploadKey(qiniuConfig)
 

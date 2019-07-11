@@ -1,6 +1,6 @@
 const Koa_router = require("koa-router");
 const Crypto = require('../../libs/md5');
-
+const getUploadToken = require('../../libs/uploadToken');
 let router = new Koa_router();
 //具体的路由表
 
@@ -273,6 +273,18 @@ router.post("*",async (ctx,next)=>{
         msg="\u8bf7\u4fdd\u5b58\u6570\u636e\uff0c\u767b\u9646\u540e\u518d\u64cd\u4f5c";
         ctx.body = {error:msg};
     }
+})
+
+//获取上传凭证
+router.post('getUploadToken',async (ctx,next)=>{
+    if(ctx.session["user"]) {
+        ctx.status = 200;
+        ctx.body =  {uploadToken : getUploadToken(ctx.config.QINIU_CONFIG)};
+    } else {
+        ctx.status = 403;
+        //用户未登录
+    }
+
 })
 
 //创建类目

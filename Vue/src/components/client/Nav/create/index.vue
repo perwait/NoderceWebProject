@@ -12,7 +12,7 @@
                     <hr>
                     <p class="msg"> {{msg}}</p>
                     <hr>
-                    <TinyMCE v-on:input="TinyBody" :url="tinyUrl" :withCredentials="withCredentials" :max-size="tinyImgSize" @on-upload-complete= "onEditorUploadComplete"  @on-upload-fail   = "onEditorUploadFail"/>
+                    <TinyMCE v-on:input="TinyBody" :url="tinyUrl" :tokenUrl="tokenUrl" :maxsizetext="maxsizetext"  :withCredentials="withCredentials" :max-size="tinyImgSize" @on-upload-complete= "onEditorUploadComplete"  @on-upload-fail = "onEditorUploadFail"/>
                     <hr>
                     <ul id="ReferList" class="referList">
                         <span>参考列表：数量{{referList}}/{{referListMax}}</span><button @click="referDel()"> -1 </button><button @click="referAdd()"> +1 </button>
@@ -47,13 +47,16 @@ export default {
             msg :null, //错误信息
             referList :0, //参考列表当前数量
             referListMax :10, //参考列表最大数量
-            tinyBody :null, //编辑器内容
-            tinyMaxSize :10000, //最大字数
             titleName : null, //标题名称 或者 主题名称
             createState : true, // 目前状态 是否允许创建 防止重复创建事件
             createMsg : null, //创建事件错误信息
-            tinyUrl :  `${window.myConfig.IMPORT_HTTP}/uploadImg`,
+            tinyBody :null, //编辑器内容
+            tinyMaxSize :10000, //最大字数
+          //  tinyUrl :  `${window.myConfig.IMPORT_HTTP}/uploadImg`,
+            tokenUrl : `${window.myConfig.IMPORT_HTTP}/getUploadToken`,
+            tinyUrl :  `${window.myConfig.QINIU_UPLOAD_HTTP}`,
             tinyImgSize : 2000*1024, //限制大小2M
+            maxsizetext : " 最大2M ",
             withCredentials : true //是否允许设置cookie
         }
     },

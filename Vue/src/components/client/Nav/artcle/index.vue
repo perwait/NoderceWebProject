@@ -57,7 +57,7 @@
             <div class="content-ct  bs-1">
                 
                 <div v-if="userInfo!=null">
-                    <TinyMCE  v-on:input="TinyBody" />
+                    <TinyMCE  v-on:input="TinyBody"   :url="tinyUrl" :tokenUrl="tokenUrl" :maxsizetext="maxsizetext"  :withCredentials="withCredentials" :max-size="tinyImgSize" />
                     <p v-show="replyMsg" class="reply-msg">{{replyMsg}}</p>
                     <p id="echo-btn" @click="replyEvent()">回&#12288;&#12288;复</p>
                 </div>
@@ -96,19 +96,23 @@ export default {
             page: this.$route.params.page, //当前回复页码
             uid : null, //用户id
             replyList : null, //回复列表
-            tinyBody :null, //编辑器内容
-            tinyMaxSize :10000, //最大字数
-            pages : null, //回复总页数
+            pages : 0, //回复总页数
             userInfo : null, //免登录状态参数
             replyState : true, // 回复状态 当前是否 允许回复
-            replyMsg : null  // 回复状态信息
+            replyMsg : null,  // 回复状态信息
+            tinyBody :null, //编辑器内容
+            tinyMaxSize :10000, //最大字数
+            tokenUrl : `${window.myConfig.IMPORT_HTTP}/getUploadToken`,
+            tinyUrl :  `${window.myConfig.QINIU_UPLOAD_HTTP}`,
+            tinyImgSize : 2000*1024, //限制大小2M
+            maxsizetext : " 最大2M ",
+            withCredentials : true //是否允许设置cookie
         }
     },
     methods:{
         //返回编辑器的内容
         TinyBody : function(data){
             this.tinyBody = data;
-            console.log(this.tinyBody.length)
         },
         //上一页
         pageBefer : function(){
@@ -218,11 +222,23 @@ export default {
                                 return response.json();
                             }
                         }).then(function(data){
+                            console.log(data)
                             if(data.error){
                                 that.replyMsg = data.error;
                             }
                             if(data.ok){
-                                that.$router.push(`/artcle/${that.tid}/${that.pid}/${that.pages}`)
+                                that.replyMsg = data.ok;
+                                let page = that.pages<1?1:that.pages;
+                                console.log()
+                                // 处理当前页刷新
+                                if(page==that.page){
+                                    that.$router.push("/");
+                                    that.$router.go(-1);
+                                }else {
+                                    //跳转到最后一页
+                                    that.$router.push(`/artcle/${that.tid}/${that.pid}/${that.pages}`)
+                                }
+                                
                             }
                             return data
                         })
@@ -253,6 +269,7 @@ export default {
                 //更新引用
                 this.artcleRefer = this.artcle.prefer;
                 this.pages = Math.ceil(this.artcle.pecho/15);
+                console.log(this.pages)
                 this.$store.dispatch("asideData",this.artcle);
                 //更新回复
                 let replyUrl = `${window.myConfig.IMPORT_HTTP}/reply/${this.tid}/${this.pid}/${this.page}`;

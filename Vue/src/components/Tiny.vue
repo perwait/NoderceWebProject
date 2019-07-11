@@ -15,6 +15,7 @@ export default {
         Id: Id,
         Editor: null,
         DefaultConfig: {},
+        UploadToken : null
         
 
       } 
@@ -47,23 +48,33 @@ export default {
           }
         }
       },
+      //token_是获取token的url请求路径
+      tokenUrl: {
+          default: '',
+          type: String
+      },
       //图片上传需要的
+      //url是上传空间路径
       url: {
           default: '',
           type: String
-        },
-        accept: {
-          default: 'image/jpeg, image/png',
-          type: String
-        },
-        maxSize: {
-          default: 2097152,
-          type: Number
-        },
-        withCredentials: {
-          default: false,
-          type: Boolean
-        }
+      },
+      accept: {
+        default: 'image/jpeg, image/png',
+        type: String
+      },
+      maxsizetext : {
+        default: '',
+        type: String
+      },
+      maxSize: {
+        default: 2097152,
+        type: Number
+      },
+      withCredentials: {
+        default: false,
+        type: Boolean
+      }
     },
     mounted () {
       this.init()
@@ -78,6 +89,7 @@ export default {
        init () {
         const self = this
         this.Editor = window.tinymce.init({
+          
           // 默认配置
           ...this.DefaultConfig,
           
@@ -87,7 +99,7 @@ export default {
            // 图片上传
           images_upload_handler: function (blobInfo, success, failure) {
             if (blobInfo.blob().size > self.maxSize) {
-              failure('文件体积过大')
+              failure(`文件体积过大  ${self.maxsizetext}`)
             }
             
             if (self.accept.indexOf(blobInfo.blob().type) >= 0) {
@@ -99,31 +111,83 @@ export default {
               //const xhr = new XMLHttpRequest()
               let formData = new FormData()
               formData.append('file', blobInfo.blob());
+              if(!self.UploadToken){
+                //如果UploadToken 不存在  则获取一个
+                ( async ()=>{
+                  await fetch(self.tokenUrl,{
+                    method : "POST",
+                    credentials: 'include'
+                  }).then(function(response){
+                    if(response.status===200){
+                      return response.json()
+                    } else {
+                      return {}
+                    }
+                  }).then(function(data){
+                    if(data.uploadToken){
+                      self.UploadToken=data.uploadToken
+                      formData.append('token',self.UploadToken);
+                    }
+                  })
 
-              ( async ()=>{
-                fetch(self.url,{
-                  method:"POST",
-                  body: formData
-                }).then(function(response){
-                  if(response.status===200){
-                    console.log(11011)
-
-                    return response.json()
-                  }else {
+                  await fetch(self.url,{
+                    method:"POST",
+                    body: formData
+                  }).then(function(response){
+                    if(response.status===200){
+                      return response.json()
+                    }else {
+                      console.log(response.status)
+                      return response.json()
+                    }
                     console.log(response.status)
-                    return response.json()
-                  }
-                  console.log(response.status)
-                }).then(function(data){
-                  if(data.url){
-                    success(data.url)
-                  }
-                  if(data.err){
-                    failure(data.err)
-                  }
-                  return;
-                })
-              })()
+                  }).then(function(data){
+                    console.log(data)
+                    if(data.hash){
+                      data.url =  `${window.myConfig.QINIU_IMG_HTTP_BEFER}${data.hash}${window.myConfig.QINIU_IMG_STYLE}`
+                      success(data.url)
+                    }
+                    if(data.err){
+                      failure(data.err)
+                    }
+                    return;
+                  })
+                  //1
+
+
+
+
+                })()
+              } else {
+                ( async ()=>{
+                  formData.append('token',self.UploadToken);
+                  await fetch(self.url,{
+                      method:"POST",
+                      body: formData
+                    }).then(function(response){
+                      if(response.status===200){
+                        return response.json()
+                      }else {
+                        console.log(response.status)
+                        return response.json()
+                      }
+                      console.log(response.status)
+                    }).then(function(data){
+                      console.log(data)
+                      if(data.hash){
+                        data.url =  `${window.myConfig.QINIU_IMG_HTTP_BEFER}${data.hash}${window.myConfig.QINIU_IMG_STYLE}`
+                        success(data.url)
+                      }
+                      if(data.err){
+                        failure(data.err)
+                      }
+                      return;
+                    })
+
+                })()
+              }
+
+            
              /* xhr.withCredentials = self.withCredentials
               xhr.open('POST', self.url)
               

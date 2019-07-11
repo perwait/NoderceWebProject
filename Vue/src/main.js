@@ -14,6 +14,9 @@ Vue.config.productionTip = false
 window.myConfig={
   HTTP_NAME : "Noderce" ,//网站域名 用于标题
   IMPORT_HTTP : "http://localhost:8080", //请求接口域名 在发布和开发阶段更换
+  QINIU_UPLOAD_HTTP : 'http://upload.qiniup.com', //七牛云华东地区 客户端上传地址
+  QINIU_IMG_HTTP_BEFER : "you qiniu server http", //七牛云 服务域名
+  QINIU_IMG_STYLE : "- you style", //七牛云图片分隔符+样式
   A_PAGE_NUMBER : 15 , //每页显示数量 这个与后台应协商确认，前端用于分页组件
 }
 window.myFunction={

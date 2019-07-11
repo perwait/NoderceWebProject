@@ -10,5 +10,12 @@ module.exports = {
     HTTP_HOST : "8080",  //服务端启动端口
     HTTP_URL : "http://localhost:8080",  //服务对外的域名
     UPLOAD_URL : path.resolve(__dirname,'upload'),  //客户端上传文件路径
-    PAGE_VIEW_VALUE : 15 //每页显示的数量
+    PAGE_VIEW_VALUE : 15, //每页显示的数量
+    QINIU_CONFIG : { 
+        scope : "noderce", //空间名称
+        time : 3600*1000, //有效时间 毫秒
+        accessKey : "you AK", //七牛云 AK 
+        secretKey : "you Sk" //七牛云 SK
+    
+    }
 }
