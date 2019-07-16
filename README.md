@@ -24,12 +24,12 @@
       Vue : npm run dev
       Koa : node server
 
-## 使用到的相关技术与框架
+## Technology stack
     Vue
     Node.js
     Koa
     MySQL
-## 	使用到的相关三方服务
+## Third party service
     [七牛云-对象存储](https://www.qiniu.com)
     [TinyMCE富文本编辑器](https://www.tinymce.com)
 # version：
