@@ -11,10 +11,10 @@ module.exports = function(router,options){
     options.html = options.html || 7;
     options.other = options.other ||7;
     //定义文件类型
-    router.all(/((\.js)|(\.jsx))$/i, Koa_static("./static", {maxAge : options * Day}));
-    router.all(/((\.css))$/i, Koa_static("./static", {maxAge : options * Day}));
-    router.all(/((\.jpg)|(\.gif)|(\.png))$/i, Koa_static("./static", {maxAge : options * Day}));
-    router.all(/((\.html)|(\.htm))$/i, Koa_static("./static", {maxAge : options * Day}));
-    router.all(/(upload_)/, Koa_static("./upload", {maxAge : options * Day}));
-    router.all("*", Koa_static("./static", {maxAge : options * Day}));
+router.all(/((\.js)|(\.jsx))$/i, Koa_static("./static", {maxAge : options.js * Day}));
+    router.all(/((\.css))$/i, Koa_static("./static", {maxAge : options.css * Day}));
+    router.all(/((\.jpg)|(\.gif)|(\.png))$/i, Koa_static("./static", {maxAge : options.img * Day}));
+    router.all(/((\.html)|(\.htm))$/i, Koa_static("./static", {maxAge : options.html * Day}));
+    router.all(/(upload_)/, Koa_static("./upload", {maxAge : options.other * Day}));
+    router.all("*", Koa_static("./static", {maxAge : options.other * Day}));
 }
