@@ -10,7 +10,7 @@
                         </ul>
                     </div>
                     <div>
-                        <p class="tc">版权 @Perwait   <a href="#">备案号ICP 000000</a></p>
+                        <p class="tc">版权归 @Noderce.com 所有   <a target="_blank" href="http://beian.miitbeian.gov.cn">京ICP备0000000号</a></p>
                     </div>
                 </div>
             </div>    

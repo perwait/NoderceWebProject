@@ -1,7 +1,7 @@
 <template>
     <div v-wechat-title="title">
-        <div class="fl">
-            <article class="content-ct  bs-1">
+        <div class="fl content-ct ">
+            <article class="content-ct bs-1">
                 <div class="artcleInfo clearfloot">
                     <h2 v-if="cid>0">发布文章</h2>
                     <h2 v-if="cid==0">创建主题</h2>

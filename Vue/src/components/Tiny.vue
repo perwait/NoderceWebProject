@@ -15,8 +15,11 @@ export default {
         Id: Id,
         Editor: null,
         DefaultConfig: {},
-        UploadToken : null
-        
+        UploadToken : null,
+        //样式
+        content_style: `
+          pre  {white-space: pre-wrap; word-wrap: break-word; background-color: #252525;}
+        `
 
       } 
   },
@@ -40,7 +43,7 @@ export default {
             branding: false, // 是否显示 品牌名
             elementpath: false, //隐藏底部 层级标签状态栏
             statusbar: false, //隐藏底部状态栏
-            toolbar:`alignleft aligncenter alignright alignjustify | fontsizeselect  hr image link table | removeformat code`,
+            toolbar:`alignleft aligncenter alignright alignjustify | formatselect fontsizeselect  hr image link table | removeformat code`,
             plugins:`hr image link code table  `,
             fontsize_formats: '14px 16px 18px 20px 24px',
             imagetools_toolbar: 'rotateleft rotateright | flipv fliph | editimage imageoptions'
@@ -237,6 +240,5 @@ export default {
 }
 </script>
 <style scoped>
-textarea { resize:none}
 </style>
 

@@ -1,8 +1,8 @@
 <template>
     <div v-wechat-title="title">
-        <div class="fl">
+        <div class="fl ${window.myConfig.HTTP_NAME}">
             <article class="content-ct  bs-1">
-                <div class="artcleInfo clearfloot">
+                <div class="artcleInfo  clearfloot">
                     <h2>所有类别:</h2>
                     <button v-if="userInfo!=null" @click="create(0)" type="button"  class="fr">创 建</button>
                 </div>
@@ -93,8 +93,23 @@ export default {
 .theme li {display: inline-block; margin-left:10px;margin-right: 10px; margin-bottom: 10px;}
 .theme li a {display: table; background-color: #f7f8fa;}
 .theme li a>div{display: table-cell;}
-.theme .ticon { background-color: #eef1f5;width: 80px; overflow: hidden;}
-.theme .tname {padding: 10px 20px; vertical-align: middle; width: 130px; overflow: hidden;}
+@media screen and (max-width: 1200px) {
+    .theme li { width: 30%;}
+    .theme .ticon {width: 80px;}
+    .theme .tname {width: 130px;}
+}
+@media screen and (max-width: 700px) {
+    .theme li { width: 100%;}
+    .theme .ticon {width: 10%;}
+    .theme .tname {width: 90%;}
+}
+
+@media screen and (min-width: 1201px) {
+    .theme .ticon { width: 80px;}
+    .theme .tname { width: 130px;}
+}
+.theme .ticon { background-color: #eef1f5; overflow: hidden; vertical-align: middle;}
+.theme .tname {padding: 10px 20px; vertical-align: middle;  overflow: hidden;}
 .theme .tname>* {width: 100%;}
 .theme .tname h3 {font-size: 16px; font-weight: 500;}
 .theme .tname p {font-size: 12px; line-height: 18px; color: #999; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;}

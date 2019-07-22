@@ -1,7 +1,7 @@
 <template>
     <div v-wechat-title="title">
-        <div class="fl">
-            <article class="content-ct  bs-1">
+        <div class="fl content-ct ">
+            <article class="content-ct bs-1">
                 <div class="artcleList">
                     <ul>
                        <li v-for="item in newArtcleList">
@@ -12,10 +12,10 @@
                                     <div class="">
                                         <h3>{{item.pname}}</h3>
                                         <p>
-                                            <span>{{item.pcreatetime}}</span>
-                                            <span>Echo ：{{item.pecho}}</span>
-                                            <span>Theme ：<router-link :to="item.turl">{{item.tname}}</router-link></span>
-                                            <span>Author ：<router-link :to="item.uurl">{{item.uname}}</router-link></span>
+                                            <span class="dispay-show " ><icon class="iconfont icon-c-red n-icon-time"></icon> {{item.pcreatetime}}</span>
+                                            <span ><icon class="iconfont icon-c-green n-icon-echo"></icon> {{item.pecho}}</span>
+                                            <span ><icon class="iconfont icon-c-blue n-icon-theme"></icon> <router-link :to="item.turl">{{item.tname}}</router-link></span>
+                                            <span ><icon class="iconfont icon-c-blueviolet n-icon-user"></icon> <router-link :to="item.uurl">{{item.uname}}</router-link></span>
                                         </p>
                                     </div>
                                 </div>
@@ -35,7 +35,7 @@ export default {
     name : 'C-newArtcle',
     data(){
         return {
-            title: "Noderce",
+            title: `首页 - ${window.myConfig.HTTP_NAME}`,
             newArtcleList : []
         }
     },
@@ -119,6 +119,8 @@ export default {
 .title span a { transition: 0.5s;}
 .title span a:hover {color: #ff3131}
 
+
+
 .txt>* { margin-bottom: 10px;}
 .txt p{}
 .txt hr { border: 0;border-bottom: 1px dashed #c3c3c3; }
@@ -146,4 +148,13 @@ export default {
 .artcleList .list-logo {transition: 0.5s;width: 50px; font-size: 0; overflow: hidden; margin-right: 15px; position: relative; z-index: 2;}
 .artcleList .list-logo img {width: 100%; border-radius: 20%;}
 .artcleList li:hover .list-logo {margin-left: 15px;}
+
+@media screen and (max-width: 1200px) {
+
+.artcleList .dispay-show {display: none;}
+}
+@media screen and (min-width: 1201px) {
+
+.artcleList .dispay-show {display: inline;}
+}
 </style>

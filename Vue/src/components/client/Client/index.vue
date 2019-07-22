@@ -48,8 +48,17 @@ html  body { width: 100%;  background-color: #e4e6dc;}
 .fr {float: right;}
 .bs-1 { box-shadow: 0 2px 5px 0px #d4d4d4;}
 
-
-.container {width: 1170px;  margin: 0 auto;}
+@media screen and (max-width: 1200px) {
+.container {width: 100%;  margin: 0 auto;}
+.content-ct { width: 100%; }
+.content-as { display:none;}
+.dispay-show {display: none;}
+}
+@media screen and (min-width: 1201px) {
+.container {width: 1200px;  margin: 0 auto;}
 .content-ct { width: 850px; }
 .content-as { width: 290px;}
+.dispay-show {display: inline;}
+}
+
 </style>

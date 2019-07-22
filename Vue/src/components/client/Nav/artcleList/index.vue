@@ -1,6 +1,6 @@
 <template>
     <div v-wechat-title="title">
-        <div class="fl">
+        <div class="fl content-ct ">
             <article class="content-ct  bs-1">
                 <div class="artcleInfo clearfloot">
                     <h2>{{tname}}</h2>
@@ -18,9 +18,9 @@
                                     <div >
                                         <h3>{{item.pname}}</h3>
                                         <p>
-                                            <span>Author ：<router-link :to="item.uurl">{{item.uname}}</router-link></span>
-                                            <span>Echo ：{{item.pecho}}</span>
-                                            <span>Time ：{{item.pcreatetime}}</span>
+                                            <span><icon class="iconfont icon-c-blue n-icon-time"></icon> {{item.pcreatetime}}</span>
+                                            <span><icon class="iconfont icon-c-green n-icon-echo"></icon> {{item.pecho}}</span>
+                                            <span><icon class="iconfont icon-c-blueviolet n-icon-user"></icon> <router-link :to="item.uurl">{{item.uname}}</router-link></span>
                                         </p>
                                     </div>
                                 </div>
@@ -47,7 +47,7 @@ export default {
             tlogo : null,
             tid : this.$route.params.tid,
             page : this.$route.params.page,
-            pages :111,
+            pages :1,
             artcleList : []
         }
     },

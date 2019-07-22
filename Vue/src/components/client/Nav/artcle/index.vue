@@ -1,13 +1,13 @@
 <template>
     <div v-wechat-title="title" >
-        <div class="fl">
-            <article class="content-ct  bs-1">
+        <div class="fl content-ct">
+            <article class=" content-ct bs-1">
                 <div v-if="artcle!==null" class="note">
                     <div  class="title">
                         <h1>{{artcle.pname}}</h1>
-                        <span>Author：<a href="">{{artcle.uname}}</a></span>
-                        <span>Theme：<router-link :to="artcle.turl">{{artcle.tname}}</router-link></span>
-                        <span><time :datetime="artcle.pcreatetime">{{artcle.pcreatetime}}</time></span>
+                        <span><icon class="iconfont icon-c-blueviolet n-icon-user"></icon> <a href="">{{artcle.uname}}</a></span>
+                        <span><icon class="iconfont icon-c-blue n-icon-theme"></icon> <router-link :to="artcle.turl">{{artcle.tname}}</router-link></span>
+                        <span><icon class="iconfont icon-c-blue n-icon-time"></icon>  <time :datetime="artcle.pcreatetime">{{artcle.pcreatetime}}</time></span>
                     </div>
                     <div class="txt" >
                         <div v-html="artcle.pcentent"></div>
@@ -82,7 +82,7 @@ export default {
     },
     data(){
         return {
-            title:"文章 - Noderce",
+            title:`文章 - ${window.myConfig.HTTP_NAME}`,
             artcle : null,
             artcleRefer : null,
             // 请求回来的 数据格式
@@ -163,7 +163,7 @@ export default {
                     if(data[0].ulogo){
                         data[0].ulogo = `${window.myConfig.IMPORT_HTTP}${data[0].ulogo}` 
                     }
-                    that.title=`${data[0].pname} - Noderce`;
+                    that.title=`${data[0].pname} - ${window.myConfig.HTTP_NAME}`;
                 }
                 return data[0];
             });
@@ -315,22 +315,23 @@ export default {
      
 }
 </script>
-<style  scoped>
-.content-ct {background-color: #fff; margin-top: 20px; overflow: hidden; }
+<style >
+.content-ct {background-color: #fff; margin-top: 20px; }
 .note  {margin: 20px; }
 .title {padding-bottom: 20px; }
 .title h1 {padding-bottom: 5px; border-bottom: 1px solid #d3d3d3; margin-bottom: 5px;}
 .title span {margin-right: 15px;}
-.title span, .title span *{ color: #888; }
+.title span, .title span a{ color: #888; }
 .title span a { transition: 0.5s;}
 .title span a:hover {color: #ff3131}
 
+/*用于文章内容 */
 .txt>* { margin-bottom: 10px;}
-
 .txt hr { border: 0;border-bottom: 1px dashed #c3c3c3; margin: 5px 0;  }
 .txt li {margin-left: 30px;}
-.txt pre { background-color: #252525; margin: 10px; padding: 0 15px; border-radius: 10px; overflow: hidden; white-space: pre-wrap; word-wrap: break-word;}
+.txt pre { background-color: #252525; letter-spacing: 1px; margin: 10px; padding: 0 15px;  padding-bottom: 5px;  border-radius: 10px; overflow: hidden; white-space: pre-wrap; word-wrap: break-word;}
 .txt pre>code{ color: #fff; width: 100% }
+.txt img {max-width: 100%; height:auto;}
 
 .bg-eee {background-color: #eee;}
 .resouce >* {padding-bottom: 10px; }

@@ -115,7 +115,13 @@ export default {
 <style scoped>
 
 .Login {width:100%;height: 100%; position: relative;  background-color: #252535; overflow: hidden;}
-.form-box {width:50%;text-align: center; padding:50px 30px; border: 2px solid #fff; border-radius: 10px; background-color: #e4e6dc;margin: 0 auto;;margin-top: 10%;}
+@media screen and (max-width : 760px){
+  .form-box {width: 80%;}
+}
+@media screen and (min-width : 761px){
+  .form-box {width: 450px;}
+}
+.form-box {text-align: center; padding:50px 30px; border: 2px solid #fff; border-radius: 10px; background-color: #e4e6dc;margin: 0 auto;;margin-top: 10%;}
 .form-box > * { color: #333;outline: none;width: 90%; display: block;margin: 10px auto; font-size: 18px; line-height: 40px; border-radius: 10px; border: 1px solid transparent; transition: 0.3s;}
 .form-box .hidden {opacity: 0;}
 .form-box h1 { font-size: 35px;}

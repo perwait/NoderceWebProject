@@ -1,6 +1,6 @@
 <template>
     <div v-wechat-title="title">
-        <div class="fl">
+        <div class="fl content-ct">
             <article class="content-ct  bs-1">
                 <div v-if="myName" class="artcleInfo clearfloot">
                     <h2>{{myName}}发布的文章</h2>

@@ -3,7 +3,7 @@
         <header class="header">
             <div class="container clearfix">
                 <span class="fl logo">
-                    <router-link to="/"><img src="@/assets/logo.png"><span><b>Noderce</b></span></router-link>
+                    <router-link to="/"><img src="@/assets/logo.png"><span class="max-750"><b>Noderce</b></span></router-link>
                 </span>
                 <span class="fr head-nav">
                     <ul>
@@ -40,13 +40,22 @@ export default {
 }
 </script>
 <style scoped>
-header.header {padding: 10px 0; background-color: #fff; border-bottom: 1px solid #666; overflow-x: hidden;}
+header.header {padding: 10px 0; background-color: #fff; border-bottom: 1px solid #666; }
 .container { height: 40px;line-height: 40px;}
 .header * { color: #333; }
 .header .logo a { font-size: 17px; transition: 0.3s;}
-.header .logo a img { height: 40px; vertical-align: middle;}
+.header .logo a img { margin:0 3px;height: 40px; vertical-align: middle;}
 .header .logo a b {  transition: 0.3s;}
 .header .logo a:hover b { color: red; letter-spacing : 3px; }
+
+@media screen and (max-width: 800px) {
+    .max-750 { display:none;}
+}
+@media screen and (min-width: 801px) {
+    .max-750 { display: inline-block;}
+}
+
+
 
 .head-nav ul { list-style: none;}
 .head-nav ul li {display: inline-block;  }
