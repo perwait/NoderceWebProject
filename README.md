@@ -2,7 +2,7 @@
 ## This WEB practice project （Vue + Node.JS + Koa + MySQL ）
 
 ## [WIKI API](https://github.com/perwait/NoderceWebProject/wiki/Koa-API-for-Client)
-    所有后端接口 参考WIKI
+    所有接口说明 参考WIKI
 
 # [Noderce.com](http://noderce.com)
     PC 上正常体验，建议分辨率 1200px
@@ -35,10 +35,10 @@
     [TinyMCE富文本编辑器](https://www.tinymce.com)
     [Icon阿里巴巴矢量图标库](https://www.iconfont.cn)
 # version：
-    1.0.3
+    1.0.4
 ## Add
-    1 对移动端进行适配
-    2 对文章的属性文字 改用 icon图标
+    1 修复 所有主题bug
+	2 增加 加载过渡css3动画
      	
     
     
