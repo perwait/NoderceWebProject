@@ -8,6 +8,7 @@
 <script>
 
 export default {
+
   name: 'App'
 }
 </script>
@@ -22,4 +23,19 @@ a {text-decoration: none;}
 .fr {float: right;}
 #app {width: 100%;height: 100%;}
 
+
+
+.fade-enter,
+.fade-leave-active {
+  height: 0;
+  opacity: 0;
+  padding: 0px;
+}
+.fade-enter-active,
+.fade-leave-active {
+  transition:  2s;
+  height: auto;
+  padding: 20px;
+  
+}
 </style>

@@ -1,7 +1,10 @@
 <template>
     <div v-wechat-title="title">
-        <div class="fl ${window.myConfig.HTTP_NAME}">
+        <div class="fl content-ct">
             <article class="content-ct  bs-1">
+            <transition name="fade">
+                <loading :isLoading="isLoading"></loading>
+            </transition>
                 <div class="artcleInfo  clearfloot">
                     <h2>所有类别:</h2>
                     <button v-if="userInfo!=null" @click="create(0)" type="button"  class="fr">创 建</button>
@@ -27,6 +30,7 @@
 export default {
     data(){
         return {
+            isLoading : true,
             title:`所有类别 - ${window.myConfig.HTTP_NAME}`,
             allTheme : null,
             userInfo : null
@@ -76,6 +80,7 @@ export default {
         {
             try {
                 this.allTheme = await this.allThemeList();
+                this.isLoading = false;
             } catch (e) {
                 console.log(e)
             }

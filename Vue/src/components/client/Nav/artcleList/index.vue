@@ -1,6 +1,9 @@
 <template>
     <div v-wechat-title="title">
         <div class="fl content-ct ">
+            <transition name="fade">
+                <loading :isLoading="isLoading"></loading>
+            </transition>
             <article class="content-ct  bs-1">
                 <div class="artcleInfo clearfloot">
                     <h2>{{tname}}</h2>
@@ -41,6 +44,7 @@ export default {
     name : 'C-artcleList',
     data(){
         return {
+            isLoading : true,
             title :`文章列表 - ${window.myConfig.HTTP_NAME}`,
             userInfo : null,
             tname : null,
@@ -132,6 +136,7 @@ export default {
             try {
                 let url = `${window.myConfig.IMPORT_HTTP}/artcleList/${this.tid}/${this.page}`
                 this.artcleList = await this.artcliListInit(url) ;
+                this.isLoading = false;
             } catch (e) {
                 console.log(e)
             }
@@ -140,6 +145,7 @@ export default {
     async beforeRouteUpdate (to, from, next) {
         this.tid = to.params.tid;
         this.page = to.params.page;
+        this.isLoading = true;
          {
             try {
                 if( from.params.tid !== to.params.tid ){
@@ -155,7 +161,8 @@ export default {
         {
             try {
                 let url = `${window.myConfig.IMPORT_HTTP}/artcleList/${this.tid}/${this.page}`
-                this.artcleList =await this.artcliListInit(url) 
+                this.artcleList =await this.artcliListInit(url) ;
+                this.isLoading = false;
             } catch (e) {
                 console.log(e)
             }

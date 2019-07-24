@@ -10,7 +10,7 @@
                         </ul>
                     </div>
                     <div>
-                        <p class="tc">版权归 @Noderce.com 所有   <a target="_blank" href="http://beian.miitbeian.gov.cn">京ICP备0000000号</a></p>
+                        <p class="tc">版权归 @Noderce.com 所有   <a target="_blank" :href="ICP.SRC">{{ICP.NUM}}</a></p>
                     </div>
                 </div>
             </div>    
@@ -27,7 +27,11 @@ export default {
             friendlyList : [
                 {name:"favicon.ico在线制作",url:"http://www.faviconico.org/favicon"},
                 {name:"菜鸟教程",url:"https://www.runoob.com/"}
-                ]
+                ],
+            ICP : {
+                SRC : window.myConfig.ICP_SRC,
+                NUM :window.myConfig.ICP_NUMBER
+            }    
         }
     }   
 

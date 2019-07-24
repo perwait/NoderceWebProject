@@ -1,6 +1,9 @@
 <template>
     <div v-wechat-title="title" >
         <div class="fl content-ct">
+            <transition name="fade">
+                <loading :isLoading="isLoading"></loading>
+            </transition>
             <article class=" content-ct bs-1">
                 <div v-if="artcle!==null" class="note">
                     <div  class="title">
@@ -82,6 +85,7 @@ export default {
     },
     data(){
         return {
+            isLoading : true,
             title:`文章 - ${window.myConfig.HTTP_NAME}`,
             artcle : null,
             artcleRefer : null,
@@ -274,6 +278,7 @@ export default {
                 //更新回复
                 let replyUrl = `${window.myConfig.IMPORT_HTTP}/reply/${this.tid}/${this.pid}/${this.page}`;
                 this.replyList = await this.replyListInit(replyUrl);
+                this.isLoading=false;
             } catch (e) {
                 console.log(e)
             }
@@ -282,6 +287,7 @@ export default {
     async beforeRouteUpdate (to, from, next) {
         {
             try {
+                this.isLoading=true;
                 if(to.params.tid===from.params.tid&&to.params.pid===from.params.pid&&to.params.page!==from.params.page){
                     //如果只变更了 page ,更新回复列表 
                     this.tid = to.params.tid;
@@ -305,7 +311,7 @@ export default {
                     let replyUrl = `${window.myConfig.IMPORT_HTTP}/reply/${this.tid}/${this.pid}/${this.page}`
                     this.replyList = await this.replyListInit(replyUrl);
                 }
-                
+                this.isLoading=false;
                 next()
             } catch (e) {
                 console.log(e)

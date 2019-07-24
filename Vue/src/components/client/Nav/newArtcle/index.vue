@@ -1,6 +1,9 @@
 <template>
     <div v-wechat-title="title">
         <div class="fl content-ct ">
+            <transition name="fade">
+                <loading :isLoading="isLoading"></loading>
+            </transition>
             <article class="content-ct bs-1">
                 <div class="artcleList">
                     <ul>
@@ -31,10 +34,13 @@
     </div>
 </template>
 <script>
+
 export default {
     name : 'C-newArtcle',
+
     data(){
         return {
+            isLoading : true,
             title: `首页 - ${window.myConfig.HTTP_NAME}`,
             newArtcleList : []
         }
@@ -92,6 +98,7 @@ export default {
             try {
                 let url = `${window.myConfig.IMPORT_HTTP}/newArtcle/1`;
                 this.newArtcleList = await this.newArtcleInit(url);
+                this.isLoading =false ;
             } catch (e) {
                 console.log(e)
             }
@@ -102,6 +109,7 @@ export default {
             try {
                 let url = `${window.myConfig.IMPORT_HTTP}/newArtcle/1`;
                 this.newArtcleList = await this.newArtcleInit(url);
+                this.isLoading =false ;
             } catch (e) {
                 console.log(e)
             }
@@ -157,4 +165,5 @@ export default {
 
 .artcleList .dispay-show {display: inline;}
 }
+
 </style>
