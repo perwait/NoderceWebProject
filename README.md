@@ -35,10 +35,12 @@
     [TinyMCE富文本编辑器](https://www.tinymce.com)
     [Icon阿里巴巴矢量图标库](https://www.iconfont.cn)
 # version：
-    1.0.4
+    1.0.5
 ## Add
-    1 修复 所有主题bug
-	2 增加 加载过渡css3动画
+    1 修复 tinyMce 与 当前页面CSS不匹配的问题
+	2 修复 苹果设备下 按钮的初始颜色不一致问题
+	3 增加编辑器功能
+	
      	
     
     

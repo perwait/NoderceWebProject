@@ -333,11 +333,12 @@ export default {
 
 /*用于文章内容 */
 .txt>* { margin-bottom: 10px;}
+.txt a{ color:#3939ff;}
 .txt hr { border: 0;border-bottom: 1px dashed #c3c3c3; margin: 5px 0;  }
 .txt li {margin-left: 30px;}
 .txt pre { background-color: #252525; letter-spacing: 1px; margin: 10px; padding: 0 15px;  padding-bottom: 5px;  border-radius: 10px; overflow: hidden; white-space: pre-wrap; word-wrap: break-word;}
 .txt pre>code{ color: #fff; width: 100% }
-.txt img {max-width: 100%; height:auto;}
+.txt img {max-width: 100%; height:auto; border: 1px solid #ccc;}
 
 .bg-eee {background-color: #eee;}
 .resouce >* {padding-bottom: 10px; }

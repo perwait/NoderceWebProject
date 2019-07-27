@@ -289,6 +289,7 @@ export default {
 .create>*{ margin: 10px auto; display: block; width: 90%; transition: 0.3s;}
 .create hr{ margin: 0;padding: 0 ;border:0px solid transparent;}
 .create input,.create button { font-size: 18px; line-height: 40px; outline: none;border-radius: 10px;  border: 1px solid transparent;}
+.create button {background-color: #ddd;}
 .create input {border: 1px solid #777; text-indent: 20px;}
 .create .err {border: 1px solid transparent; box-shadow: 0 1px 5px red;} 
 .create .msg { font-size: 16px;height: 16px; margin: 0 auto; color: red; text-indent: 20px;}
@@ -297,7 +298,7 @@ export default {
 .create-t {width: 50%;margin: 0 auto;}
 
 .referList { list-style: none; }
-.referList button { padding: 1px 20px; margin-left: 15px; line-height: 20px; font-size: 16px; transform: 0.3s;}
+.referList button { padding: 1px 20px; margin-left: 15px; line-height: 20px; font-size: 16px; transform: 0.3s; }
 .referList button:hover { background-color: #30b815; color: #fff;}
 .referList li {border-left: 1px dashed #acacac; border-bottom: 1px solid #acacac; padding: 5px; overflow: hidden;} 
 .referList input {margin-right: 15px; font-size: 16px; line-height: 26px; transition: 0.5s; width: 200px; }
