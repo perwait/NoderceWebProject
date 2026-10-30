@@ -19,7 +19,7 @@
                         <li v-for="item in referList" ><input type="text" autocomplete='off' @blur="clearMsg($event,'span')"  @keyup="Max($event,40,'span')" placeholder=" Text - MaxSize 70  "><input type="text" autocomplete='off' @blur="clearMsg($event,'span')" @keyup="Max($event,300,'span')" placeholder=" URL - MaxSize 300 "><span></span></li>
                     </ul>
                     <hr>
-                    <button @click="create({titleSize:40})" class="submit">发&#12288;布</button>
+                    <button @click="create({titleSize:40})" :disabled="!createState" class="submit">{{createState ? "发　布" : "提交中…"}}</button>
                 </div>
                 <div v-if="cid==0" id="create" class="create create-t" >
                     <input v-model="titleName" autocomplete='off' :class="{ err : msg}" @blur="clearMsg($event)"  @keyup="Max($event,10)"   type="text" placeholder=" Theme Name"> 
@@ -27,7 +27,7 @@
                     <p class="msg">{{msg}}</p>
                                         
                     <hr>
-                    <button @click="create({titleSize:10})"  class="submit">创&#12288;建</button>
+                    <button @click="create({titleSize:10})" :disabled="!createState" class="submit">{{createState ? "创　建" : "提交中…"}}</button>
                 </div>
             </article>
         </div>
@@ -35,6 +35,10 @@
 </template>
 <script>
 import TinyMCE from "@/components/Tiny"
+
+//是否包含 4 字节字符（emoji 等），后端数据库是 utf8，写不进去
+const hasAstral = (str) => { for (let i = 0; i < str.length; i++) { const c = str.charCodeAt(i); if (c >= 0xD800 && c <= 0xDFFF) { return true; } } return false; };
+
 export default {
     name:"C-create",
     components :{
@@ -123,129 +127,144 @@ export default {
         referAdd :function(){
             this.referList=this.referList+1>this.referListMax?this.referListMax:this.referList+1;
         },
-        //按钮事件 创建 函数
-        create : function (json){
-            //防止重复创建
-            if(this.createState){
-                this.createState = false;
-                this.createMsg = null;
-                //通用校验 
-                if(this.cid.search(/\D/)!==-1){
-                    //参数不正确  意外终止
-                    this.createMsg = "\u53c2\u6570\u4e0d\u6b63\u786e\u0020\u0020\u610f\u5916\u7ec8\u6b62";
-                } else if(this.titleName===null||this.titleName.length<=0){
-                    //名称或标题 不能为null
-                    this.createMsg = "\u540d\u79f0\u6216\u6807\u9898\u0020\u4e0d\u80fd\u4e3a\u006e\u0075\u006c\u006c";
-                } else if(this.titleName.length>json.titleSize){
-                    console.log(this.titleName.length,json.titleSize)
-                    //名称或标题 长度超标
-                    this.createMsg = '\u540d\u79f0\u6216\u6807\u9898\u0020\u957f\u5ea6\u8d85\u6807'
-                } else {
-                    this.titleName=this.titleName.trim();
-                    //专用校验
-                    //创建主题 
-                    if(this.cid==0){
-                        ( async ()=>{
-                            let that = this;
-                            let formData = new FormData();
-                            formData.append("titleName",this.titleName.trim());
-                            let data = fetch(`${window.myConfig.IMPORT_HTTP}/createTheme`,{
-                                method: "POST",
-                                credentials: 'include',
-                                body : formData
-                            }).then(function(response){
-                                if(response.status===200){
-                                    return response.json();
-                                } else {
-                                    return response.json();
-                                }
-                            }).then(function(data){
-                                if(data.error){
-                                    that.createMsg=data.error;
-                                }
-                                if(data.ok){
-                                that.$router.push(`/allTheme/1`)
+        //组装参考列表。返回 {error} 或 {value:[...]}；限制必须与后端 libs/validate.js 一致
+        buildRefer : function(){
+            let referArr = [];
+            if(parseInt(this.referList)>0){
+                let _obj = document.getElementById('ReferList');
+                let _list = _obj.getElementsByTagName("li");
+                for(let i=0;i<_list.length;i++){
+                    let _in=_list[i].getElementsByTagName("input");
+                    if(_in.length===2){
+                        let _json = {};
+                        _json.name = _in[0].value.trim();
+                        _json.url = _in[1].value.trim();
+                        if(_json.name.length!==0&&_json.url.length!==0){
+                            if(_json.name.length>70){
+                                return {error:"参考列表的名称不能超过 70 个字"};
                             }
-                                return data;
-                            });
-                            
-                        })()
-
-                    }else {
-                    //发布文章 校验 
-                        if(this.tinyBody===null){
-                            // 编辑器内容不能为空
-                            this.createMsg ="\u7f16\u8f91\u5668\u5185\u5bb9\u4e0d\u80fd\u4e3a\u7a7a";
-
-                        } else if(this.tinyBody.length>this.tinyMaxSize){
-                            // 内容过长 
-                            this.createMsg = '\u5185\u5bb9\u8d85\u957f';
-                        } else {
-                            //处理参考列表  空值直接不传入
-                            let referArr = [];
-                            if(parseInt(this.referList)>0){
-                                
-                                let _obj = document.getElementById('ReferList');
-                                let _list = _obj.getElementsByTagName("li");
-                                if(_list.length>0){
-                                    for(let i=0;i<_list.length;i++){
-                                       let  _in=_list[i].getElementsByTagName("input");
-                                        if(_in.length===2){
-                                            let _json = {};
-                                            _json.name = _in[0].value.trim();
-                                            _json.url = _in[1].value.trim();
-                                            if(_json.name.length!==0&&_json.url.length!==0){
-                                                referArr.push(JSON.stringify(_json));
-                                            }
-                                        }
-                                    }
-                                }
+                            if(hasAstral(_json.name)){
+                                return {error:"参考列表的名称含有暂不支持的特殊字符（如 emoji）"};
                             }
-                            ( async ()=>{
-                                let that = this;
-                                let formData = new FormData();
-                                formData.append('titleName',this.titleName.trim());
-                                formData.append('titleContext',this.tinyBody);
-                                formData.append('refer',referArr);
-                                formData.append('tid',this.cid)
-                                await fetch(`${window.myConfig.IMPORT_HTTP}/createArtcle`,{
-                                    method:"POST",
-                                    credentials: 'include',
-                                    body : formData
-                                }).then(function(response){
-                                    if(response.status===200){
-                                        return response.json();
-                                    } else {
-                                        return response.json();
-                                    }
-                                }).then(function(data){
-                                    if(data.error){
-                                        that.createMsg=data.error;
-                                    }
-                                    if(data.ok){
-                                       let dataCookie = data.data;
-                                       if(dataCookie.cookieAge){
-                                           console.log(cookieAge)
-                                            dataCookie.uurl= `/myIndex/${dataCookie.uid}/1`;
-                                            dataCookie.ulogo= `${window.myConfig.IMPORT_HTTP}${dataCookie.ulogo}`
-                                            let cookieAge = dataCookie.cookieAge;
-                                            delete dataCookie.cookieAge;
-                                            dataCookie = JSON.stringify(dataCookie);
-
-                                            document.cookie =`userInfo=${dataCookie}; expires=${new Date(cookieAge).toUTCString()}; path=/`;
-                                       } 
-                                       that.$router.push(`/artcleList/${that.cid}/1`)
-                                    }
-                                    return data;
-                                })
-                            })()
+                            if(_json.url.length>300||!/^https?:\/\/[^\s<>"']+$/i.test(_json.url)){
+                                return {error:"参考列表的链接必须是 http(s) 地址，且不能超过 300 个字符"};
+                            }
+                            referArr.push(JSON.stringify(_json));
                         }
                     }
                 }
-                this.createState = true;
             }
+            //后端 prefer 列最大 2000 个字符（含方括号）
+            if(`[${referArr.join(",")}]`.length>2000){
+                return {error:"参考列表字数超标 请减少"};
+            }
+            return {value:referArr};
+        },
+        //提交请求。统一处理 超时 / 非 JSON 响应 / 网络错误；
+        //无论成功还是失败，都要等请求结束之后才允许再次提交（避免重复创建）
+        submit : function(path,formData,onOk){
+            let that = this;
+            let ctrl = typeof AbortController==="function" ? new AbortController() : null;
+            let timer = setTimeout(function(){ if(ctrl){ ctrl.abort(); } },30000);
+            return fetch(`${window.myConfig.IMPORT_HTTP}/${path}`,{
+                method: "POST",
+                credentials: 'include',
+                body : formData,
+                signal : ctrl ? ctrl.signal : undefined
+            }).then(function(response){
+                return response.json().catch(function(){
+                    return {error:`服务器返回异常 (HTTP ${response.status})`};
+                });
+            }).then(function(data){
+                if(data.error){
+                    that.createMsg = data.error;
+                } else if(data.ok){
+                    onOk(data);
+                }
+            }).catch(function(err){
+                that.createMsg = (err&&err.name==="AbortError")
+                    ? "请求超时，请先到列表确认是否已创建成功，避免重复提交"
+                    : "网络异常，请稍后再试";
+            }).then(function(){
+                clearTimeout(timer);
+                that.createState = true;
+            });
+        },
+        //按钮事件 创建 函数
+        create : function (json){
+            //防止重复创建：请求结束之前（submit 里复位）不允许再次提交
+            if(!this.createState){
+                return;
+            }
+            this.createMsg = null;
+            //通用校验
+            if(String(this.cid).search(/\D/)!==-1){
+                //参数不正确  意外终止
+                this.createMsg = "参数不正确  意外终止";
+                return;
+            }
+            if(this.titleName===null||this.titleName.trim().length<=0){
+                //名称或标题 不能为空
+                this.createMsg = "名称或标题 不能为空";
+                return;
+            }
+            this.titleName = this.titleName.trim();
+            if(this.titleName.length>json.titleSize){
+                //名称或标题 长度超标
+                this.createMsg = "名称或标题 长度超标";
+                return;
+            }
+            if(hasAstral(this.titleName)){
+                this.createMsg = "名称或标题 含有暂不支持的特殊字符（如 emoji），请删除后再提交";
+                return;
+            }
+            let that = this;
+            //创建主题
+            if(this.cid==0){
+                let formData = new FormData();
+                formData.append("titleName",this.titleName);
+                this.createState = false;
+                this.submit("createTheme",formData,function(){
+                    that.$router.push(`/allTheme/1`);
+                });
+                return;
+            }
+            //发布文章 校验
+            if(this.tinyBody===null||this.tinyBody.trim().length===0){
+                // 编辑器内容不能为空
+                this.createMsg = "编辑器内容不能为空";
+                return;
+            }
+            if(this.tinyBody.length>this.tinyMaxSize){
+                // 内容过长
+                this.createMsg = "内容超长";
+                return;
+            }
+            //处理参考列表  空值直接不传入
+            let refer = this.buildRefer();
+            if(refer.error){
+                this.createMsg = refer.error;
+                return;
+            }
+            let formData = new FormData();
+            formData.append('titleName',this.titleName);
+            formData.append('titleContext',this.tinyBody);
+            formData.append('refer',refer.value);
+            formData.append('tid',this.cid);
+            this.createState = false;
+            this.submit("createArtcle",formData,function(data){
+                let dataCookie = data.data;
+                if(dataCookie&&dataCookie.cookieAge){
+                    dataCookie.uurl= `/myIndex/${dataCookie.uid}/1`;
+                    dataCookie.ulogo= `${window.myConfig.IMPORT_HTTP}${dataCookie.ulogo}`
+                    let cookieAge = dataCookie.cookieAge;
+                    delete dataCookie.cookieAge;
+                    dataCookie = JSON.stringify(dataCookie);
+                    document.cookie =`userInfo=${dataCookie}; expires=${new Date(cookieAge).toUTCString()}; path=/`;
+                }
+                that.$router.push(`/artcleList/${that.cid}/1`);
+            });
         }
-        
     },
     async created(){
         {
@@ -294,6 +313,7 @@ export default {
 .create .err {border: 1px solid transparent; box-shadow: 0 1px 5px red;} 
 .create .msg { font-size: 16px;height: 16px; margin: 0 auto; color: red; text-indent: 20px;}
 .create .submit:hover {background-color: #30b815; color: #fff;}
+.create .submit:disabled {opacity: 0.6; cursor: not-allowed; background-color: #ddd; color: #666;}
 
 .create-t {width: 50%;margin: 0 auto;}
 

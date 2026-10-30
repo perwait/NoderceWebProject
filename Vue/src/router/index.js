@@ -41,6 +41,7 @@ export default new Router({
             {
               //首页最新 文章  page：页码
               path : "/newArtcle/:page",
+              name : "newArtcle",
               components : {
                 default : CNewArtcle,
                 aside :CAside             
@@ -50,6 +51,7 @@ export default new Router({
             {
               //个人主页
               path: "/myIndex/:uid/:page",
+              name: "myIndex",
               components : {
                 default : CMyIndex,
                 aside :CAside
@@ -68,6 +70,7 @@ export default new Router({
             {
               //所有主题  page：页码
               path: "/allTheme/:page",
+              name: "allTheme",
               components : {
                 default : CAllTheme,
                 aside :CAside
@@ -83,6 +86,7 @@ export default new Router({
               }
             },
             {
+              //关于 页面
               path : "/note",
            
               components : {

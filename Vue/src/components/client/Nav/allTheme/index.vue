@@ -21,29 +21,51 @@
                             </router-link>
                         </li>  
                     </ul>
+                    <Pages :page="this.$route.params.page" :pages="pages" :routerName="'allTheme'" :paramsJson="{}"/>
                 </div>
             </article>
         </div>
     </div>
 </template>
 <script>
+import Pages from "@/components/client/Public/Pages"
 export default {
     data(){
         return {
             isLoading : true,
             title:`所有类别 - ${window.myConfig.HTTP_NAME}`,
             allTheme : null,
-            userInfo : null
+            userInfo : null,
+            page : this.$route.params.page,
+            pages : 1
 
         }
+    },
+    components:{
+        Pages
     },
     methods : {
         create : function(cid){
             
             this.$router.push(`/create/${cid}`)
         },
-        allThemeList : function(){
-            let data = fetch(`${window.myConfig.IMPORT_HTTP}/allTheme/1`,{method:"GET"}).then(function(response){
+        getAllThemePages : function(){
+            let data = fetch(`${window.myConfig.IMPORT_HTTP}/allThemePage`,{method:"GET"}).then(function(response){
+                if(response.status===200){
+                    return response.json();
+                } else {
+                    return {}
+                }
+                }).then(function(data){
+
+                    data = Math.ceil (data ) ;
+
+                    return data;
+                });
+            return data;
+        },
+        allThemeList : function(page){
+            let data = fetch(`${window.myConfig.IMPORT_HTTP}/allTheme/${page}`,{method:"GET"}).then(function(response){
                 if(response.status===200){
                     return response.json();
                 } else {
@@ -79,14 +101,45 @@ export default {
         }
         {
             try {
-                this.allTheme = await this.allThemeList();
+                this.pages = await this.getAllThemePages();
+            } catch (e) {
+                console.log(e)
+            }
+        }
+        {
+            try {
+                this.allTheme = await this.allThemeList(this.page);
                 this.isLoading = false;
             } catch (e) {
                 console.log(e)
             }
         }
 
-    }
+    },
+    async beforeRouteUpdate (to, from, next) {
+        this.page = to.params.page;
+        this.isLoading = true;
+         {
+            try {
+                if( from.params.page !== to.params.page ){
+                    this.allTheme = await this.allThemeList(this.page);
+                    this.isLoading = false;
+                }
+            } catch (e) {
+                console.log(e)
+            }
+        }
+        {
+            try {
+                let url = `${window.myConfig.IMPORT_HTTP}/artcleList/${this.tid}/${this.page}`
+                this.artcleList =await this.artcliListInit(url) ;
+                this.isLoading = false;
+            } catch (e) {
+                console.log(e)
+            }
+        }
+        next()
+    }    
 }
 </script>
 <style  scoped>

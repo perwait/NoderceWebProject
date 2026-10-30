@@ -26,6 +26,7 @@
                         </li>
                         
                     </ul>
+                    <Pages :page="page" :pages="pages" :routerName="'newArtcle'" :paramsJson="{}"/>
                 </div>
             </article>
            
@@ -34,50 +35,85 @@
     </div>
 </template>
 <script>
+import Pages from "@/components/client/Public/Pages"
 
 export default {
     name : 'C-newArtcle',
-
+    components : {
+        Pages
+    },
     data(){
         return {
             isLoading : true,
             title: `首页 - ${window.myConfig.HTTP_NAME}`,
-            newArtcleList : []
+            newArtcleList : [],
+            page : this.$route.params.page, //当前页码
+            pages : 1 //总页数
         }
     },
     methods :{
+        //最新文章总页数
+        getNewArtclePages : function(){
+            return fetch(`${window.myConfig.IMPORT_HTTP}/newArtclePage`,{method:"GET"}).then(function(response){
+                if(response.status===200){
+                    return response.json();
+                } else {
+                    return 1;
+                }
+            }).then(function(data){
+                data = Math.ceil(data);
+                return data >= 1 ? data : 1;
+            }).catch(function(){
+                return 1;
+            });
+        },
         newArtcleInit : function(url){
             let data =  fetch(url,{method:"GET"}).then(function(response){
                 if(response.status===200){
                     return response.json();
                 } else {
-                    return {}
+                    return [];
                 }
             }).then(function(data){
-                if(data.length>0){
-                    data.forEach(item =>{
-                        if(item.pcreatetime){
-                            item.pcreatetime  = new Date(item.pcreatetime).Format("yyyy-MM-dd");
-                        }
-                        if(!item.purl){
-                            item.purl= `/artcle/${item.p_tid}/${item.pid}/1`
-                        }
-                        if(item.tlogo){
-                            item.tlogo=`${window.myConfig.IMPORT_HTTP}${item.tlogo}`
-                        }
-                        if(!item.turl){
-                            item.turl=`/artcleList/${item.p_tid}/1`
-                        }
-                        if(!item.uurl){
-                            item.uurl = `/myIndex/${item.p_uid}/1`
-                        }
-                    })
-                   
+                if(!Array.isArray(data)){
+                    return [];
                 }
-
+                data.forEach(item =>{
+                    if(item.pcreatetime){
+                        item.pcreatetime  = new Date(item.pcreatetime).Format("yyyy-MM-dd");
+                    }
+                    if(!item.purl){
+                        item.purl= `/artcle/${item.p_tid}/${item.pid}/1`
+                    }
+                    if(item.tlogo){
+                        item.tlogo=`${window.myConfig.IMPORT_HTTP}${item.tlogo}`
+                    }
+                    if(!item.turl){
+                        item.turl=`/artcleList/${item.p_tid}/1`
+                    }
+                    if(!item.uurl){
+                        item.uurl = `/myIndex/${item.p_uid}/1`
+                    }
+                });
                 return data;
             });
             return data
+        },
+        //加载指定页：文章列表和总页数同时请求；失败也要结束加载动画
+        loadPage : async function(page){
+            this.isLoading = true;
+            this.page = page;
+            this.title = parseInt(page) > 1
+                ? `首页 第 ${parseInt(page)} 页 - ${window.myConfig.HTTP_NAME}`
+                : `首页 - ${window.myConfig.HTTP_NAME}`;
+            try {
+                let pagesRequest = this.getNewArtclePages();
+                this.newArtcleList = await this.newArtcleInit(`${window.myConfig.IMPORT_HTTP}/newArtcle/${page}`);
+                this.pages = await pagesRequest;
+            } catch (e) {
+                console.log(e)
+            }
+            this.isLoading = false;
         }
     },
     async created(){
@@ -94,25 +130,15 @@ export default {
                 }
             }
         }
-        {
-            try {
-                let url = `${window.myConfig.IMPORT_HTTP}/newArtcle/1`;
-                this.newArtcleList = await this.newArtcleInit(url);
-                this.isLoading =false ;
-            } catch (e) {
-                console.log(e)
-            }
-        }
+        await this.loadPage(this.$route.params.page);
     },
     async beforeRouteUpdate (to, from, next) {
-         {
-            try {
-                let url = `${window.myConfig.IMPORT_HTTP}/newArtcle/1`;
-                this.newArtcleList = await this.newArtcleInit(url);
-                this.isLoading =false ;
-            } catch (e) {
-                console.log(e)
-            }
+        //页码变化：重新加载对应页，然后回到页面顶部。无论成功失败都必须调用 next()，否则导航会一直挂起
+        try {
+            await this.loadPage(to.params.page);
+            window.scrollTo(0, 0);
+        } finally {
+            next();
         }
     }
 }

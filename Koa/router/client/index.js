@@ -1,20 +1,66 @@
 const Koa_router = require("koa-router");
 const Crypto = require('../../libs/md5');
 const getUploadToken = require('../../libs/uploadToken');
+const V = require('../../libs/validate');
+const throttle = require('../../libs/throttle');
+const service = require('../../libs/articleService');
+const Q = require('../../libs/queries');
 let router = new Koa_router();
 //具体的路由表
 
+// 数据库暂时不可用 / 过载 时返回 503，而不是 500
+const BUSY = {ETIMEDOUT:true, ECONNREFUSED:true, PROTOCOL_CONNECTION_LOST:true, POOL_ENQUEUELIMIT:true, ER_CON_COUNT_ERROR:true};
 
+// 分页偏移量。页码限制在 [1, 1000000]：page=0 会算出负的 LIMIT 偏移，MySQL 直接报语法错误(500)；
+// 页码特别大又会超出 MySQL 能接受的数值范围。
+function pageOffset(page, pageSize) {
+    let p = parseInt(page, 10);
+    if (!(p >= 1)) {
+        p = 1;
+    }
+    if (p > 1000000) {
+        p = 1000000;
+    }
+    return (p - 1) * pageSize;
+}
 
+// 统一的错误响应。业务错误按它自带的状态码返回；其它错误记录日志后返回通用提示，不把内部信息暴露给前端。
+// throttleKey：操作失败时释放频率限制，让用户可以马上重试
+function fail(ctx, err, throttleKey) {
+    if (err instanceof V.AppError) {
+        ctx.status = err.status;
+        ctx.body = {error: err.message};
+        if (throttleKey && err.status !== 429) {
+            throttle.clear(throttleKey);
+        }
+        return;
+    }
+    console.error(err);
+    if (throttleKey) {
+        throttle.clear(throttleKey);
+    }
+    if (BUSY[err && err.code]) {
+        ctx.status = 503;
+        ctx.body = {error: "服务器繁忙，请稍后再试"};
+    } else {
+        ctx.status = 500;
+        ctx.body = {error: "服务器内部错误，请稍后再试"};
+    }
+}
 
-router.all('*', async (ctx,next) =>{
+router.all('(.*)', async (ctx,next) =>{
     //处理跨域  此表示 跨域白名单 ，您可以自定。不在列表内的名单或者名单内为false的地址，不做跨域处理
     let allowOrigin = {
+        "https://www.noderce.com":true,
+        "https://noderce.com":true,
+        /** 
         "http://localhost:80":true,
         "http://localhost:8080":true,
         "http://localhost":true,
         "http://127.0.0.1":true,
-        "http://localhost:82":true
+        "http://127.0.0.1:8081":true,
+        "http://localhost:1024":true
+        */
     }
     let {origin} = ctx.headers;
     //当您的 接口服务器 和 媒体资源服务器 是同一台机器是，您只需要设定设定接口请求的跨域设置
@@ -24,7 +70,12 @@ router.all('*', async (ctx,next) =>{
     }
     //仅管他看上去没什么用 ，实际上会触发 session的 续期和重新设置 开关
     // ctx.session.views;
-    await next()
+    try {
+        await next()
+    } catch (err) {
+        // koa 默认的错误处理会清空已设置的响应头，导致 500 时浏览器只显示 CORS 错误；这里自己处理，保留 CORS 头
+        fail(ctx, err);
+    }
     // 如果你希望 接口服务器 和 媒体资源服务器分离，那么应该使用以下方案，来提高性能和安全性
     /* 
     console.log(ctx.header )
@@ -42,15 +93,6 @@ router.all('*', async (ctx,next) =>{
 
 });
 
-//上传图片
-router.post("uploadImg", async (ctx,next)=>{
-    ctx.status=200;
-    let _path= ctx.request.fields.file[0].path;
-    let url=ctx.config.HTTP_URL+"/"+_path.substring(_path.search('upload_'));
-    console.log(url);
-    ctx.body={url:url}; 
-});
-
 //获取 Nav上推荐的主题类目
 router.get("topThemeList", async (ctx,next)=>{
     ctx.status = 200;
@@ -61,7 +103,18 @@ router.get("topThemeList", async (ctx,next)=>{
     ctx.body = data;
 })
 
-
+//获取 个人主页的文章 页数
+router.get("myIndexPage/:uid",async (ctx,next) => {
+    let {uid} = ctx.params;
+    if((uid.search(/\D/)!=-1)){
+        ctx.status = 404;
+        ctx.body= JSON.stringify({status:404,msg:`Error: ${uid}   is not found!`});
+    } else {
+        let data = await ctx.db.query("select count(pid) as n from posts where p_uid=? and phidden=?",[uid,0]);
+        let pages = Math.ceil (data[0].n/ctx.config.PAGE_VIEW_VALUE );
+        ctx.body = pages;
+    }
+});
 
 //获取 个人主页的 文章
 router.get("myIndex/:uid/:page", async (ctx,next)=> {
@@ -71,14 +124,10 @@ router.get("myIndex/:uid/:page", async (ctx,next)=> {
         ctx.body= JSON.stringify({status:404,msg:`Error: ${uid} | ${page}  is not found!`});
     } else {
         ctx.status = 200;
-        let start = (parseInt(page)-1)*ctx.config.PAGE_VIEW_VALUE;
-        let data = await ctx.db.query(`select pid,p_tid,p_uid,pname,pecho,pcreatetime,purl,tlogo,tname,turl,uname,uurl,ulogo,utxt,uartcles from posts
-            left join theme on posts.p_tid = theme.tid 
-            left join user on posts.p_uid = user.uid
-             where phidden=? and p_uid=? order by pcreatetime DESC limit ?,?`,[0,uid,start,ctx.config.PAGE_VIEW_VALUE]);
+        let start = pageOffset(page,ctx.config.PAGE_VIEW_VALUE);
+        let data = await ctx.db.query(Q.MY_INDEX,[0,uid,start,ctx.config.PAGE_VIEW_VALUE]);
         ctx.body = data;
     }
-    next();
 });
 
 
@@ -87,14 +136,10 @@ router.get("artcle/:tid/:pid", async (ctx,next) => {
     let {tid,pid} = ctx.params;
     if((tid.search(/\D/)!=-1)|(pid.search(/\D/)!=-1)){
         ctx.status = 404;
-        crx.body = JSON.stringify({status:404,msg:`Error: ${tid}  is not found!`});
+        ctx.body = JSON.stringify({status:404,msg:`Error: ${tid}  is not found!`});
     } else {
         ctx.status = 200;
-        let data = await ctx.db.query(`select pid,pname,pcreatetime,pcentent,pecho,prefer,p_tid,tname,turl,p_uid,uname,uurl,ulogo,utxt,uartcles from posts 
-        left join theme on posts.p_tid = theme.tid
-        left join user on posts.p_uid = user.uid 
-        where phidden=? and p_tid=? and pid=? 
-            `,[0,tid,pid]);
+        let data = await ctx.db.query(Q.ARTICLE,[0,tid,pid]);
         ctx.body = data;
     }
 });
@@ -104,10 +149,10 @@ router.get("reply/:tid/:pid/:page", async (ctx,next)=> {
     let {tid,pid,page} = ctx.params ;
     if((tid.search(/\D/)!=-1)|(pid.search(/\D/)!=-1)|(page.search(/\D/)!=-1)){
         ctx.status = 404;
-        ctx.bbody = JSON.stringity({status:404,msg:`Error: ${tid} | ${pid} | ${page} is not found!`})
+        ctx.body = JSON.stringify({status:404,msg:`Error: ${tid} | ${pid} | ${page} is not found!`})
     } else {
         ctx.status = 200;
-        let start =  (parseInt(page)-1)*ctx.config.PAGE_VIEW_VALUE;
+        let start =  pageOffset(page,ctx.config.PAGE_VIEW_VALUE);
         let data = await ctx.db.query(`select rid,rcontent,rcreatetime,r_uid,uname,uurl,ulogo from reply
             left join user on reply.r_uid = user.uid 
             where r_tid = ? and r_pid = ? and rhidden = ?
@@ -124,10 +169,10 @@ router.get("themeName/:tid", async (ctx,next) => {
     let {tid} = ctx.params;
     if(tid.search(/\D/)!=-1){
         ctx.status = 404;
-        crx.body = JSON.stringify({status:404,msg:`Error: ${tid}  is not found!`});
+        ctx.body = JSON.stringify({status:404,msg:`Error: ${tid}  is not found!`});
     } else {
         ctx.status = 200;
-        let data = await ctx.db.query(`select tname,t_pnum from theme where tid = ?`,[tid]);
+        let data = await ctx.db.query(Q.THEME_NAME,[tid]);
         ctx.body = data;
     }
 })
@@ -137,17 +182,19 @@ router.get("artcleList/:tid/:page", async (ctx,next) =>{
     let {tid,page} =  ctx.params;
     if((tid.search(/\D/)!=-1)|(page.search(/\D/)!=-1)){
         ctx.status = 404;
-        ctx.body= JSON.stringify({status:404,msg:`Error: ${tid} | ${pid} is not found!`});
+        ctx.body= JSON.stringify({status:404,msg:`Error: ${tid} | ${page} is not found!`});
     } else  {
         ctx.status = 200;
-        let start = (parseInt(page)-1)*ctx.config.PAGE_VIEW_VALUE;
-        let data = await ctx.db.query(`select pid,p_tid,p_uid,pname,pecho,pcreatetime,purl,uname,ulogo,uurl,tname from posts
-            left join user on posts.p_uid = user.uid 
-            left join theme on posts.p_tid = theme.tid
-            where phidden=? and p_tid=? order by pcreatetime DESC limit ?,?`,[0,tid,start,ctx.config.PAGE_VIEW_VALUE]);
+        let start = pageOffset(page,ctx.config.PAGE_VIEW_VALUE);
+        let data = await ctx.db.query(Q.ARTICLE_LIST,[0,tid,start,ctx.config.PAGE_VIEW_VALUE]);
         ctx.body=data;
     }
-    next();
+});
+
+//获取 最新文章 页数
+router.get("newArtclePage", async (ctx,next)=> {
+    let data = await ctx.db.query(Q.NEW_ARTICLES_COUNT,[0]);
+    ctx.body = Math.ceil(data[0].n/ctx.config.PAGE_VIEW_VALUE);
 });
 
 //获取 最新文章 列表
@@ -158,14 +205,19 @@ router.get("newArtcle/:page", async (ctx,next)=> {
         ctx.body= JSON.stringify({status:404,msg:`Error: ${page} is not found!`});
     } else {
         ctx.status = 200;
-        let start = (parseInt(page)-1)*ctx.config.PAGE_VIEW_VALUE;
-        let data = await ctx.db.query(`select pid,p_tid,p_uid,pname,pecho,pcreatetime,purl,tlogo,tname,uname,turl,uurl from posts
-            left join theme on posts.p_tid = theme.tid 
-            left join user on posts.p_uid = user.uid
-             where phidden=? order by pcreatetime DESC limit ?,?`,[0,start,ctx.config.PAGE_VIEW_VALUE]);
+        let start = pageOffset(page,ctx.config.PAGE_VIEW_VALUE);
+        let data = await ctx.db.query(Q.NEW_ARTICLES,[0,start,ctx.config.PAGE_VIEW_VALUE]);
         ctx.body = data;
     }
-    next();
+});
+
+
+
+//获取 主题类别 页数
+router.get("allThemePage",async (ctx,next) => {
+    let data = await ctx.db.query("select count(*) as n from theme");
+    let pages = Math.ceil (data[0].n/ctx.config.PAGE_VIEW_VALUE );
+    ctx.body = pages;
 });
 
 //获取 主题类别 列表， 
@@ -176,11 +228,10 @@ router.get("allTheme/:page",async (ctx,next) => {
         ctx.body= JSON.stringify({status:404,msg:`Error: ${page} is not found!`});
     } else {
         ctx.status = 200;
-        let start = (parseInt(page)-1)*ctx.config.PAGE_VIEW_VALUE;
-        let data = await ctx.db.query("select tid,tname,tlogo,t_pnum,turl from theme order by tid DESC limit ?,?",[start,ctx.config.PAGE_VIEW_VALUE]);
+        let start = pageOffset(page,ctx.config.PAGE_VIEW_VALUE);
+        let data = await ctx.db.query(Q.THEME_LIST,[start,ctx.config.PAGE_VIEW_VALUE]);
         ctx.body = data;
     }
-    next();
 });
 
 
@@ -190,9 +241,9 @@ router.post("login",async (ctx,next) => {
 
     //ctx.res.setHeader('access-control-allow-origin','*');
     //获取post 参数
-    let {username,password} = ctx.request.fields
-    username = username.trim();
-    password = password.trim();
+    let {username,password} = ctx.request.fields || {};
+    username = V.text(username);
+    password = V.text(password);
     let msg=null;
     if(username.length===0){
         //用户名未输入
@@ -264,13 +315,13 @@ router.post("login",async (ctx,next) => {
     });
 
 // 验证是否有登录session ，如果没有 要求重新登录，不能设置为all，除非将图片做额外的路由接口
-router.post("*",async (ctx,next)=>{
+router.post("(.*)",async (ctx,next)=>{
     if(ctx.session["user"]) {
         await next();
     } else {
         ctx.status = 403 ;
         // 请保存数据，登陆后再操作
-        msg="\u8bf7\u4fdd\u5b58\u6570\u636e\uff0c\u767b\u9646\u540e\u518d\u64cd\u4f5c";
+        let msg="\u8bf7\u4fdd\u5b58\u6570\u636e\uff0c\u767b\u9646\u540e\u518d\u64cd\u4f5c";
         ctx.body = {error:msg};
     }
 })
@@ -287,173 +338,90 @@ router.post('getUploadToken',async (ctx,next)=>{
 
 })
 
+//上传图片（需要登录；放在登录校验之后，避免匿名用户往服务器写文件）
+router.post("uploadImg", async (ctx,next)=>{
+    try {
+        let files = ctx.request.fields && ctx.request.fields.file;
+        let file = Array.isArray(files) ? files[0] : files;
+        if(!file || typeof file.path !== "string"){
+            throw new V.AppError(400, "没有收到文件");
+        }
+        //只允许图片：上传目录是作为静态资源直接对外提供的，不能让人传 .html / .js 之类的文件
+        if(!/\.(jpe?g|png|gif|webp)$/i.test(file.path)){
+            require("fs").unlink(file.path, function(){});
+            throw new V.AppError(400, "只允许上传图片（jpg / png / gif / webp）");
+        }
+        ctx.status = 200;
+        ctx.body = {url: ctx.config.HTTP_URL + "/" + require("path").basename(file.path)};
+    } catch (err) {
+        fail(ctx, err);
+    }
+});
+
 //创建类目
 router.post("createTheme",async (ctx,next)=>{
-    let {titleName} = ctx.request.fields;
-    titleName=titleName.trim();
-    let createMsg =null;
-    if(titleName===null||titleName.length<=0){
-        //名称或标题 不能为null
-        ctx.status = 401;
-        createMsg = "\u540d\u79f0\u6216\u6807\u9898\u0020\u4e0d\u80fd\u4e3a\u006e\u0075\u006c\u006c";
-        ctx.body = {error:createMsg};
-    } else if(titleName.length>10){
-        //名称或标题 长度超标
-        ctx.status = 401;
-        createMsg = '\u540d\u79f0\u6216\u6807\u9898\u0020\u957f\u5ea6\u8d85\u6807';
-        ctx.body = {error:createMsg};
-    } else {
-        //判断重复
-        if((await ctx.db.query(`select tid from theme where tname = ?`,[titleName])).length===0){
-            if(ctx.session['user']){
-                ctx.status=200;
-                let _user = ctx.session['user'];
-
-                //创建成功
-                await ctx.db.query(`insert into theme (tname,t_uid) values (?,?) `,[titleName,_user.uid]);
-                createMsg = '\u521b\u5efa\u6210\u529f';
-                ctx.body = {ok : createMsg};   
-            }
-        } else {
-            ctx.status = 405;
-            //该类目已存在，不能重复创建
-            createMsg = '\u8be5\u7c7b\u76ee\u5df2\u5b58\u5728\uff0c\u4e0d\u80fd\u91cd\u590d\u521b\u5efa';
-            ctx.body = {error:createMsg};
+    let key = `theme:${ctx.session["user"].uid}`;
+    try {
+        let titleName = V.text((ctx.request.fields || {}).titleName);
+        if(titleName.length<=0){
+            throw new V.AppError(400, "名称或标题 不能为空");
         }
+        if(titleName.length>V.LIMITS.THEME_NAME_MAX){
+            throw new V.AppError(400, "名称或标题 长度超标");
+        }
+        V.assertNoAstral(titleName, "名称或标题");
+        //防止连点 / 重复提交
+        if(!throttle.hit(key, 3000)){
+            throw new V.AppError(429, "操作过于频繁，请稍后再试");
+        }
+        //判断重复
+        if((await ctx.db.query(`select tid from theme where tname = ?`,[titleName])).length!==0){
+            throw new V.AppError(405, "该类目已存在，不能重复创建");
+        }
+        await ctx.db.query(`insert into theme (tname,t_uid) values (?,?) `,[titleName,ctx.session["user"].uid]);
+        ctx.status = 200;
+        ctx.body = {ok : "创建成功"};
+    } catch (err) {
+        fail(ctx, err, key);
     }
 });
 
 //创建文章
+//  不再重试：校验失败直接返回错误；写库在一个事务里完成（见 libs/articleService.js），成功后才返回 ok
 router.post("createArtcle",async ( ctx,next)=>{
-    let {titleName,titleContext,refer,tid} = ctx.request.fields;
-    refer = `[${refer.toString()}]`.trim()
-    titleContext = titleContext.trim();
-    titleName=titleName.trim();
-    let createMsg =null;
-    if(tid.search(/\D/)!==-1){
-        //非法请求
-        ctx.status = 401;
-        createMsg = "\u975e\u6cd5\u8bf7\u6c42";
-        ctx.body = {error:createMsg};
-    }else if(titleName===null||titleName.length<=0){
-        //名称或标题 不能为null
-        ctx.status = 401;
-        createMsg = "\u540d\u79f0\u6216\u6807\u9898\u0020\u4e0d\u80fd\u4e3a\u006e\u0075\u006c\u006c";
-        ctx.body = {error:createMsg};
-    } else if(titleName.length>40){
-        //名称或标题 长度超标
-        ctx.status = 401;
-        createMsg = '\u540d\u79f0\u6216\u6807\u9898\u0020\u957f\u5ea6\u8d85\u6807';
-        ctx.body = {error:createMsg};
-    }else if(titleContext===null){
-        //内容不能为空
-        ctx.status = 401;
-        createMsg = '\u5185\u5bb9\u4e0d\u80fd\u4e3a\u7a7a';
-        ctx.body = {error:createMsg};
-    }else if(titleContext.length<10){
-        //内容太少
-        ctx.status = 401;
-        createMsg = '\u5185\u5bb9\u592a\u5c11';
-        ctx.body = {error:createMsg};
-    }else if(titleContext.length>10000){
-        //内容过长 请减少
-        ctx.status = 401;
-        createMsg = '\u5185\u5bb9\u8fc7\u957f\u0020\u8bf7\u51cf\u5c11';
-        ctx.body = {error:createMsg};
-    } else if(refer.toString().length>3500){
-        //参考列表总字数超标 请减少
-        ctx.status = 401;
-        createMsg = '\u53c2\u8003\u5217\u8868\u5b57\u6570\u8d85\u6807\u0020\u8bf7\u51cf\u5c11';
-        ctx.body = {error:createMsg};
-    } else {
-        //验证完毕
-        if(ctx.session['user']){
-            let user = ctx.session['user'];
-            let _data = await ctx.db.query(`select t_pnum from theme where tid =? `,[tid]);
-            let udata= await  ctx.db.query(`select uid,uname,uurl,ulogo,uartcles,utxt from user where uid=?`,[user.uid]);
-            if(_data.length===1){
-                let t_pnum = _data[0].t_pnum;
-                //将文章添加进数据库 并更改改类目目前文章数量
-                await function _createArtcle (){
-                    t_pnum+=1
-                    ctx.db.query(`INSERT INTO posts (pid,pname,pcentent,p_tid,p_uid,prefer,pcreatetime) values (?,?,?,?,?,?,?)`
-                    ,[t_pnum,titleName,titleContext,tid,user.uid,refer,new Date().getTime()]).then(function(ok){
-                    },function(err){
-                        _createArtcle()
-                    })
-                    ctx.db.query(`update theme set t_pnum = ? where tid = ?`,[t_pnum,tid]);
-                    let uartcles = udata[0].uartcles
-                    uartcles+=1;
-                    ctx.db.query(`update user set uartcles = ? where uid = ?`,[uartcles,user.uid]);
-                    //创建成功
-                    ctx.status =200;
-                    ctx.session.views;
-                    udata[0].cookieAge = (new Date().getTime()+ctx.config.SESSION_MAXAGE);
-                    ctx.body = {ok:"\u521b\u5efa\u6210\u529f",data:udata[0]};
-                }();
-            } else {
-                //类目不存在
-                ctx.status = 401;
-                createMsg = '\u7c7b\u76ee\u4e0d\u5b58\u5728';
-                ctx.body = {error:createMsg};
-            }
+    let key = `article:${ctx.session["user"].uid}`;
+    try {
+        let input = V.parseArticleInput(ctx.request.fields);
+        //防止连点 / 重复提交
+        if(!throttle.hit(key, 5000)){
+            throw new V.AppError(429, "操作过于频繁，请稍后再试");
         }
+        let result = await service.createArticle(ctx.db, ctx.session["user"].uid, input);
+        //touch session 让它续期
+        ctx.session.views;
+        result.user.cookieAge = (new Date().getTime()+ctx.config.SESSION_MAXAGE);
+        ctx.status = 200;
+        ctx.body = {ok:"创建成功",data:result.user,pid:result.pid};
+    } catch (err) {
+        fail(ctx, err, key);
     }
 });
+
 // 文章回复
 router.post("reply", async (ctx,next)=>{
-    let {reply,tid,pid} = ctx.request.fields;
-    let msg = null;
-    if(reply===null){
-        ctx.status = 401;
-        // 内容不能为空
-        msg = '\u5185\u5bb9\u4e0d\u80fd\u4e3a\u7a7a';
-        ctx.body = {error : msg}
-    } else if(reply.length>10000) {
-        ctx.status = 401;
-        // 内容过长
-        msg = '\u5185\u5bb9\u8fc7\u957f';
-        ctx.body = {error : msg}
-    } else if((tid.search(/\D/)!==-1)&&(pid.search(/\D/)!==-1)){
-        ctx.status = 401;
-        // 参数错误
-        msg = '\u53c2\u6570\u9519\u8bef';
-        ctx.body = {error : msg}
-    } else {
-        let _theme = await ctx.db.query('select tid from theme where tid = ?',[tid]);
-        let _posts = await ctx.db.query('select pecho from posts where pid = ? and p_tid =?',[pid,tid]);
-        //判断是否真的存在这篇文章 和 服务器是否有内部错误
-        if(_theme.length!==1 | _posts.length!==1){
-            ctx.status = 401;
-            console.log(_theme.length,_posts.length)
-            // 请求异常
-            msg = '\u8bf7\u6c42\u5f02\u5e38';
-            ctx.body = {error : msg}
-        } else {
-            //校验完成 开始写入
-            if(ctx.session["user"]){
-                let uid = ctx.session['user'].uid;
-                let _pecho = _posts[0].pecho;
-                await function replyFun(){
-                    _pecho+=1;
-                    ctx.db.query('insert into reply (rid,rcontent,rcreatetime,r_tid,r_pid,r_uid) values (?,?,?,?,?,?)'
-                    ,[_pecho,reply.trim(),new Date().getTime(),tid,pid,uid]).then(function(ok){},function(err){
-                        replyFun();
-                    })
-                    ctx.db.query('update posts set pecho =? where p_tid = ? and pid = ? ',[_pecho,tid,pid]);
-                    ctx.status = 200;
-                    //回复成功
-                    msg = '\u56de\u590d\u6210\u529f';
-                    ctx.body = {ok : msg}
-                }()
-            }
+    let key = `reply:${ctx.session["user"].uid}`;
+    try {
+        let input = V.parseReplyInput(ctx.request.fields);
+        //防止连点 / 重复提交
+        if(!throttle.hit(key, 3000)){
+            throw new V.AppError(429, "操作过于频繁，请稍后再试");
         }
+        await service.createReply(ctx.db, ctx.session["user"].uid, input);
+        ctx.status = 200;
+        ctx.body = {ok : "回复成功"};
+    } catch (err) {
+        fail(ctx, err, key);
     }
 })
-    
+
 module.exports = router.routes();
-    
-// console.log(ctx.request.fields)
-//获取文件
-//console.log(ctx.request.fields.file)
-// console.log(ctx.request.fields.file[0])

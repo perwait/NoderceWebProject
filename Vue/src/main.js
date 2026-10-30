@@ -7,17 +7,25 @@ import store from "./store"
 import './assets/icon/iconfont.css';
 import vTitle from "vue-wechat-title"
 import loading from "@/components/client/Public/Loading"
+import sanitize from "@/utils/sanitize"
 
 Vue.use(vTitle);
+
+//v-html 渲染前的 HTML 过滤（防存储型 XSS），模板里用 $sanitize(html)
+Vue.prototype.$sanitize = sanitize;
 
 Vue.config.productionTip = false
 
 window.myConfig={
-  ICP_SRC: 'http://beian.miitbeian.gov.cn',
+  ICP_SRC: 'http://beian.miit.gov.cn/',
   ICP_NUMBER : '浙ICP备19028917号',
+  WGA_SRC: 'http://www.beian.gov.cn/portal/registerSystemInfo?recordcode=32050602010878',
+  WGA_NUMBER : '京公网安备32050602010878号',
   LOADING_OK_TIME : 1000, //加载完成后 的 xxx毫秒后 隐藏加载动画
   HTTP_NAME : "Noderce | 一名初级全栈工程师的学习笔记" ,//网站域名 用于标题
+  //IMPORT_HTTP : "http://127.0.0.1:8080", //请求接口域名 在发布和开发阶段更换
   IMPORT_HTTP : "https://noderce.com:8080", //请求接口域名 在发布和开发阶段更换
+  //IMPORT_HTTP : "https://www.noderce.com", //请求接口域名 在发布和开发阶段更换
   QINIU_UPLOAD_HTTP : 'https://upload.qiniup.com', //七牛云华东地区 客户端上传地址
   QINIU_IMG_HTTP_BEFER : "https://img.noderce.com/", //七牛云图片前缀
   QINIU_IMG_STYLE : "-max850x3000_auto", //七牛云图片分隔符+样式

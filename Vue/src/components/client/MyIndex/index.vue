@@ -28,6 +28,7 @@
                         </li>
                         
                     </ul>
+                    <Pages :page="this.$route.params.page" :pages="pages" :routerName="'myIndex'" :paramsJson="{'uid':this.$route.params.uid}"/>
                 </div>
             </article>
            
@@ -36,6 +37,7 @@
     </div>
 </template>
 <script>
+import Pages from "@/components/client/Public/Pages"
 export default {
     name: 'C-myIndex',
     data(){
@@ -43,11 +45,30 @@ export default {
             title: `个人主页 - ${window.myConfig.HTTP_NAME}`,
             myName : null,
             uid : this.$route.params.uid,
-            page :this.$route.params.page,
+            page : this.$route.params.page,
+            pages :  0,
             newArtcleList : []
         }
     },
+    components:{
+        Pages
+    },
     methods :{
+        getMyIndexPages : function(uid){
+            let data = fetch(`${window.myConfig.IMPORT_HTTP}/myIndexPage/${uid}`,{method:"GET"}).then(function(response){
+                if(response.status===200){
+                    return response.json();
+                } else {
+                    return {}
+                }
+                }).then(function(data){
+
+                    data = Math.ceil (data ) ;
+
+                    return data;
+                });
+            return data;
+        },
         myIndexInit : function(url){
             
             let data = fetch(url,{method:"GET"}).then(function(response){
@@ -88,6 +109,13 @@ export default {
     async created(){
         {
             try {
+                this.pages = await this.getMyIndexPages(this.uid);
+            } catch (e) {
+                console.log(e)
+            }
+        }
+        {
+            try {
                 let url = `${window.myConfig.IMPORT_HTTP}/myIndex/${this.uid}/${this.page}`;
                 this.newArtcleList = await this.myIndexInit(url);
                 if(this.newArtcleList.length>0){
@@ -117,15 +145,23 @@ export default {
                     this.title = `${this.newArtcleList[0].uname} - 个人主页 - ${window.myConfig.HTTP_NAME}`;
                     this.$store.dispatch("asideData",this.newArtcleList[0]);
                 }
+                {
+                    try {
+                        this.pages = await this.getMyIndexPages(this.uid);
+                    } catch (e) {
+                        console.log(e)
+                    }
+                }
                 next();
             } catch (e) {
                 console.log(e)
             }
         }
-    },
-     beforeDestroy () {
+
+    },     
+    beforeDestroy () {
          this.$store.dispatch("asideData",null);
-     }
+    }
 }
 </script>
 <style  scoped>

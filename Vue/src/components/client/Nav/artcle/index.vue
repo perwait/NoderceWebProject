@@ -13,7 +13,7 @@
                         <span><icon class="iconfont icon-c-blue n-icon-time"></icon>  <time :datetime="artcle.pcreatetime">{{artcle.pcreatetime}}</time></span>
                     </div>
                     <div class="txt" >
-                        <div v-html="artcle.pcentent"></div>
+                        <div v-html="$sanitize(artcle.pcentent)"></div>
                         <hr>
                         <div class="resouce">
                             <label v-if="artcleRefer.length>0">参考文献</label>
@@ -40,7 +40,7 @@
                                 </div>
                             </div>
                             <div class="reply-content txt">
-                                <div v-html="item.rcontent"></div>
+                                <div v-html="$sanitize(item.rcontent)"></div>
                             </div>
                         </div>
                     </section>
@@ -62,11 +62,11 @@
                 <div v-if="userInfo!=null">
                     <TinyMCE  v-on:input="TinyBody"   :url="tinyUrl" :tokenUrl="tokenUrl" :maxsizetext="maxsizetext"  :withCredentials="withCredentials" :max-size="tinyImgSize" />
                     <p v-show="replyMsg" class="reply-msg">{{replyMsg}}</p>
-                    <p id="echo-btn" @click="replyEvent()">回&#12288;&#12288;复</p>
+                    <p id="echo-btn" :class="{disabled: !replyState}" @click="replyEvent()">{{replyState ? "回　　复" : "提交中…"}}</p>
                 </div>
                 <div v-if="userInfo==null" class="no-login">
-                    <p>登录后进行更多操作</p>
-                    <router-link to="/login">点此处登录</router-link>
+                    <p>仅管理员可编辑次页面</p>
+                    <router-link to="/login">维护内容</router-link>
                 </div>
             </div>
             
@@ -78,6 +78,7 @@
 </template>
 <script>
 import TinyMCE from "@/components/Tiny"
+import { safeUrl } from "@/utils/sanitize"
 export default {
     name: "C-artcle",
     components: {
@@ -159,7 +160,12 @@ export default {
                         data[0].pcreatetime =  new Date(data[0].pcreatetime).Format("yyyy-MM-dd");
                     }
                     if(data[0].prefer){
-                        data[0].prefer = JSON.parse(data[0].prefer);
+                        //参考文献：解析失败不影响文章显示；只保留 http(s) 链接，防止 javascript: 之类的地址
+                        try {
+                            data[0].prefer = JSON.parse(data[0].prefer).filter(function(x){ return x && safeUrl(x.url); });
+                        } catch (e) {
+                            data[0].prefer = [];
+                        }
                     }
                     if(!data[0].uurl){
                         data[0].uurl = `/myIndex/${data[0].p_uid}/1`
@@ -201,56 +207,60 @@ export default {
             return data;
         },
         //回复
+        //  请求结束（成功或失败）之前不允许再次提交，避免重复回复；失败后可以重新提交
         replyEvent : function (){
-            if(this.replyState){
-                this.replyState=false;
-                if(this.tinyBody==null){
-                    this.replyMsg = "内容不能为空"
-                }else if(this.tinyBody.length>this.tinyMaxSize){
-                    this.replyMsg = "内容过长"
-                }else {
-                    ( async ()=>{
-                        let that = this;
-                        let _formData = new FormData();
-                        _formData.append("reply",this.tinyBody);
-                        _formData.append('tid',this.tid);
-                        _formData.append('pid',this.pid);
-                        await fetch(`${window.myConfig.IMPORT_HTTP}/reply`,{
-                            method:"POST",
-                            credentials: 'include',
-                            body : _formData
-                        }).then(function(response){
-                            if(response.status===200){
-                                return response.json();
-                            }else {
-                                return response.json();
-                            }
-                        }).then(function(data){
-                            console.log(data)
-                            if(data.error){
-                                that.replyMsg = data.error;
-                            }
-                            if(data.ok){
-                                that.replyMsg = data.ok;
-                                let page = that.pages<1?1:that.pages;
-                                console.log()
-                                // 处理当前页刷新
-                                if(page==that.page){
-                                    that.$router.push("/");
-                                    that.$router.go(-1);
-                                }else {
-                                    //跳转到最后一页
-                                    that.$router.push(`/artcle/${that.tid}/${that.pid}/${that.pages}`)
-                                }
-                                
-                            }
-                            return data
-                        })
-                    })()
-                }
-
+            if(!this.replyState){
+                return;
             }
-
+            if(this.tinyBody==null||this.tinyBody.trim().length===0){
+                this.replyMsg = "内容不能为空";
+                return;
+            }
+            if(this.tinyBody.length>this.tinyMaxSize){
+                this.replyMsg = "内容过长";
+                return;
+            }
+            let that = this;
+            this.replyState = false;
+            this.replyMsg = null;
+            let _formData = new FormData();
+            _formData.append("reply",this.tinyBody);
+            _formData.append('tid',this.tid);
+            _formData.append('pid',this.pid);
+            let ctrl = typeof AbortController==="function" ? new AbortController() : null;
+            let timer = setTimeout(function(){ if(ctrl){ ctrl.abort(); } },30000);
+            fetch(`${window.myConfig.IMPORT_HTTP}/reply`,{
+                method:"POST",
+                credentials: 'include',
+                body : _formData,
+                signal : ctrl ? ctrl.signal : undefined
+            }).then(function(response){
+                return response.json().catch(function(){
+                    return {error:`服务器返回异常 (HTTP ${response.status})`};
+                });
+            }).then(function(data){
+                if(data.error){
+                    that.replyMsg = data.error;
+                } else if(data.ok){
+                    that.replyMsg = data.ok;
+                    let page = that.pages<1?1:that.pages;
+                    // 处理当前页刷新
+                    if(page==that.page){
+                        that.$router.push("/");
+                        that.$router.go(-1);
+                    }else {
+                        //跳转到最后一页
+                        that.$router.push(`/artcle/${that.tid}/${that.pid}/${that.pages}`)
+                    }
+                }
+            }).catch(function(err){
+                that.replyMsg = (err&&err.name==="AbortError")
+                    ? "请求超时，请刷新页面确认是否已回复成功，避免重复提交"
+                    : "网络异常，请稍后再试";
+            }).then(function(){
+                clearTimeout(timer);
+                that.replyState = true;
+            });
         }
     },
     async created(){
@@ -348,6 +358,7 @@ export default {
 .resouce li a:hover { color:  #ff7d49;}
 
 #echo-btn {text-align: center;line-height: 40px; margin: 10px; border: 1px solid #ddd; cursor:pointer}
+#echo-btn.disabled {opacity: 0.6; cursor: not-allowed;}
 #echo-btn:hover {border: 1px solid #333; background: linear-gradient(to right,rgba(243,245,249,0),rgba(243,245,249,100) 15%,rgba(243,245,249,100) 85%,rgba(243,245,249,0));}
 .no-login  {margin: 30px auto; text-align: center;}
 .no-login a {display: inline-block ;padding: 10px 30px; color: #f0f0f0; background-color: #ff7f50;margin-top: 10px; transform: 0.3s;}

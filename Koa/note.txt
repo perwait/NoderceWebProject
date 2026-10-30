@@ -4,7 +4,14 @@
  |- node_modules/ 由npm配置生成
  |- libs/ 存储公共对象 配置
     |- md5.js 计算MD5值 的公共函数 
-    |- database.js 连接数据库的 公共函数
+    |- database.js 连接数据库的 公共函数（连接池，带排队上限和超时）
+    |- transaction.js 查询 / 事务封装（失败回滚，只有死锁才重试，最多 2 次）
+    |- queries.js 读接口的 SQL（页面显示的各种数量都从真实数据里数出来）
+    |- validate.js 请求参数校验（长度与数据库列宽一致、emoji 处理、XSS 入库黑名单）
+    |- throttle.js 频率限制（防止连点 / 重复提交）
+    |- articleService.js 创建文章 / 回复（事务内完成，不重试）
+    |- uploadGuard.js multipart 上传保护（必须登录；未登录只允许体积很小的表单）
+    |- uploadToken.js 七牛云上传凭证
  |- log/ 记录日志
  |- router/ 存储路由表信息
     |- admin/ 后台管理的路由目录
@@ -19,8 +26,9 @@
  |- template/ 模板文件
  |- upload/ 客户端上传文件的 目录
  |- server.js 程序入口
- |- config.js 全局配置信息
+ |- config.example.js 配置模板，复制为 config.js 后填写（config.js 含密码，已被 .gitignore 排除）
+ |- config.js 全局配置信息（不提交）
  |- package.json 服务器程序依赖配置信息
  |- package-lock.json 记录package,json 依赖项的具体来源和版本号
  |- note.txt 服务器目录结构说明
- |- getKeys.js 独立运行，生成2048个1024字节的随机字符串 .keys文件，用作server.keys的滚动签名
+ |- getKeys.js 独立运行，生成2048个1024字节的随机字符串 .keys文件，用作server.keys的滚动签名（.keys 不提交）

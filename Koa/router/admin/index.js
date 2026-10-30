@@ -11,7 +11,7 @@ router.post("/login", async (ctx) => {
 });
 
 
-router.all("*", async (ctx, next) =>{
+router.all("(.*)", async (ctx, next) =>{
     // 验证是否登录 
 });
 router.get("/", (ctx,next) => {

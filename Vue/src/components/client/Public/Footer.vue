@@ -11,6 +11,7 @@
                     </div>
                     <div>
                         <p class="tc">版权归 @Noderce.com 所有   <a target="_blank" :href="ICP.SRC">{{ICP.NUM}}</a></p>
+                        <p class="tc"><a target="_blank" :href="WGA.SRC">{{WGA.TEXT}}</a></p>
                     </div>
                 </div>
             </div>    
@@ -31,6 +32,10 @@ export default {
             ICP : {
                 SRC : window.myConfig.ICP_SRC,
                 NUM :window.myConfig.ICP_NUMBER
+            },
+            WGA : {
+                SRC : window.myConfig.WGA_SRC,
+                TEXT :window.myConfig.WGA_NUMBER
             }    
         }
     }   

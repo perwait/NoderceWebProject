@@ -11,7 +11,7 @@
                         <li><router-link to="/allTheme/1">分 类</router-link></li>
                         <li><router-link to="/note">关 于</router-link></li>
                         <li v-if="userInfo!=null" class="user-logo"><router-link :to="userInfo.uurl"><img :src="userInfo.ulogo"/></router-link></li>
-                        <li v-if="userInfo==null"><router-link to="/login">登 录</router-link></li>
+                        <li v-if="userInfo==null"><router-link to="/login">维 护</router-link></li>
                     </ul>
                 </span>
             </div>    

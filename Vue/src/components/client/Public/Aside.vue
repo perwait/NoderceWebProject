@@ -10,7 +10,7 @@
                         <router-link :to="asideData.uurl">{{asideData.uname}}</router-link>
                     </li>
                     <li class="user-txt"><router-link :to="asideData.uurl">文章 <b>{{asideData.uartcles}}</b> 篇</router-link></li>
-                    <li v-html="asideData.utxt"></li>
+                    <li v-html="$sanitize(asideData.utxt)"></li>
                     <li></li>
                     <li></li>
                 </ul>   
@@ -22,9 +22,9 @@
                     <li class="user-logo">
                            <router-link to="/login/"><img  :src="defaultLogo" ></router-link> 
                     </li>
-                    <li>登录后 可以发表主题和回复</li>
+                    <li>仅管理员可编辑此页面</li>
                     <li class="user-txt">
-                        <router-link to="/login/">点击登录</router-link>
+                        <router-link to="/login/">站长维护</router-link>
                     </li>
                     <li></li>
                     <li></li>

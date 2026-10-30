@@ -1,0 +1,46 @@
+# ===== 依赖 =====
+node_modules/
+
+# ===== 构建产物 / 测试覆盖率 =====
+Vue/dist/
+Vue/test/unit/coverage/
+Vue/test/e2e/reports/
+
+# ===== 敏感文件：绝对不要提交 =====
+# 服务端配置(数据库密码、密码盐、七牛密钥)：复制 Koa/config.example.js 为 Koa/config.js 后自行填写
+Koa/config.js
+# session 签名密钥：在 Koa 目录执行 node getKeys.js 生成
+Koa/.keys
+.env
+.env.*
+*.pem
+*.key
+
+# ===== 运行时产生的文件 =====
+# 客户端上传目录
+Koa/upload/
+Koa/log/
+*.log
+nohup.out
+
+# ===== 备份 / 临时文件 =====
+*.bak
+*.old
+*.tmp
+.backup-*/
+.deploy-backup-*/
+
+# ===== 编辑器 / 系统文件 =====
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+# macOS 资源分叉文件(._xxx)
+._*
+
+# ===== Claude Code 本地配置 =====
+.claude/
+
+# 本地临时参考文件
+/参考
