@@ -1,6 +1,6 @@
 # NoderceWebProject
 ## 一个小型文章发布网站（Vue 2 + Node.js + Koa2 + MySQL）
-
+### 这是个轻量型的文章内容发布项目， 只允许发布内容，不允许删除和修改，不允许前置注册。 只能在内部创建管理员账号。 删除和修改行为 需要走操作数据库手动进行。
 ## [WIKI API](https://github.com/perwait/NoderceWebProject/wiki/Koa-API-for-Client)
     所有接口说明 参考WIKI（本文末尾也列出了接口清单）
 
